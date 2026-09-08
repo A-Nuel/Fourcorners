@@ -3,78 +3,88 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { 
-  ShieldCheck, 
-  Layers, 
-  SlidersHorizontal, 
-  Sparkles, 
-  Wallet, 
-  CheckCircle2, 
+import {
+  Layers,
+  Wallet,
   ExternalLink,
   ChevronDown,
   LogOut,
-  RotateCcw
+  RotateCcw,
+  ShieldCheck,
 } from 'lucide-react';
 import { truncateAddress } from '@/lib/format';
-import { getStoredJobs, getStoredSession, revokeStoredSession } from '@/lib/storage';
+import {
+  getStoredJobs,
+  getStoredSession,
+  revokeStoredSession,
+  clearSession,
+} from '@/lib/storage';
 import { revokeAltanaSession } from '@/lib/altana';
+import {
+  connectWallet,
+  getConnectedAccount,
+  WalletError,
+} from '@/lib/walletConnect';
 
 export default function Navbar() {
   const pathname = usePathname();
   const [walletAddress, setWalletAddress] = useState<string>('');
-  const [isAltanaConnected, setIsAltanaConnected] = useState<boolean>(false);
   const [jobCount, setJobCount] = useState<number>(0);
   const [showWalletMenu, setShowWalletMenu] = useState<boolean>(false);
   const [isRevoking, setIsRevoking] = useState<boolean>(false);
+  const [connectError, setConnectError] = useState<string>('');
+  const [isConnecting, setIsConnecting] = useState(false);
+
+  const refreshCounts = () => {
+    setJobCount(getStoredJobs().length);
+  };
 
   useEffect(() => {
-    // Initial read
-    const session = getStoredSession();
-    if (session && session.status === 'active') {
-      setWalletAddress(session.ownerAddress);
-      setIsAltanaConnected(true);
-    } else if (typeof window !== 'undefined' && (window as any).ethereum?.selectedAddress) {
-      setWalletAddress((window as any).ethereum.selectedAddress);
-    }
+    getConnectedAccount().then((addr) => {
+      if (addr) setWalletAddress(addr);
+    });
+    refreshCounts();
 
-    const jobs = getStoredJobs();
-    setJobCount(jobs.length);
+    const onChange = () => refreshCounts();
+    window.addEventListener('fourcorners_jobs_changed', onChange);
+    window.addEventListener('fourcorners_session_changed', onChange);
+    window.addEventListener('storage', onChange);
 
-    const handleStorageChange = () => {
-      const updatedJobs = getStoredJobs();
-      setJobCount(updatedJobs.length);
-      const s = getStoredSession();
-      if (s && s.status === 'active') {
-        setWalletAddress(s.ownerAddress);
-        setIsAltanaConnected(true);
-      }
+    const eth = (window as any).ethereum;
+    const onAccounts = (accounts: string[]) => {
+      setWalletAddress(accounts?.[0] || '');
+      if (!accounts?.[0]) clearSession();
     };
+    eth?.on?.('accountsChanged', onAccounts);
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('fourcorners_jobs_changed', onChange);
+      window.removeEventListener('fourcorners_session_changed', onChange);
+      window.removeEventListener('storage', onChange);
+      eth?.removeListener?.('accountsChanged', onAccounts);
+    };
   }, []);
 
-  const connectWallet = async () => {
-    if (typeof window !== 'undefined' && (window as any).ethereum) {
-      try {
-        const accounts = await (window as any).ethereum.request({ method: 'eth_requestAccounts' });
-        if (accounts && accounts[0]) {
-          setWalletAddress(accounts[0]);
-          return;
-        }
-      } catch (e) {
-        console.warn('Injected wallet request rejected, using Altana session demo wallet', e);
-      }
+  const handleConnect = async () => {
+    setConnectError('');
+    setIsConnecting(true);
+    try {
+      const addr = await connectWallet();
+      setWalletAddress(addr);
+    } catch (e: any) {
+      const msg =
+        e instanceof WalletError
+          ? e.message
+          : e?.message || 'Wallet connection failed';
+      setConnectError(msg);
+    } finally {
+      setIsConnecting(false);
     }
-    // Default demonstration agentic wallet on BSC Testnet
-    const demoWallet = '0x32759604104c810E3B68565b939E8b64e0303E8A';
-    setWalletAddress(demoWallet);
-    setIsAltanaConnected(true);
   };
 
   const handleDisconnect = () => {
     setWalletAddress('');
-    setIsAltanaConnected(false);
+    clearSession();
     setShowWalletMenu(false);
   };
 
@@ -82,21 +92,24 @@ export default function Navbar() {
     setIsRevoking(true);
     try {
       const session = getStoredSession();
-      if (session) {
-        const res = await revokeAltanaSession(session.sessionKeyId);
-        revokeStoredSession(res.txHash);
-        setIsAltanaConnected(false);
-        setShowWalletMenu(false);
+      if (session?.sessionKeyId) {
+        const result = await revokeAltanaSession(session.sessionKeyId);
+        revokeStoredSession(result.txHash || undefined);
+      } else {
+        clearSession();
       }
+    } catch (e) {
+      console.error(e);
+      clearSession();
     } finally {
       setIsRevoking(false);
+      setShowWalletMenu(false);
     }
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-md">
+    <header className="sticky top-0 z-50 border-b border-slate-800/80 bg-[#080c14]/95 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-        {/* Brand */}
         <div className="flex items-center space-x-6">
           <Link href="/" className="flex items-center space-x-3 group">
             <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 shadow-lg shadow-amber-500/20 group-hover:scale-105 transition-transform">
@@ -122,7 +135,6 @@ export default function Navbar() {
             </div>
           </Link>
 
-          {/* Primary Nav */}
           <nav className="hidden md:flex items-center space-x-1 text-sm font-medium">
             <Link
               href="/"
@@ -146,14 +158,13 @@ export default function Navbar() {
             </Link>
             <Link
               href="/compare"
-              className={`px-3 py-1.5 rounded-lg transition-colors flex items-center space-x-1.5 ${
+              className={`px-3 py-1.5 rounded-lg transition-colors ${
                 pathname === '/compare'
                   ? 'text-white bg-slate-800'
                   : 'text-slate-300 hover:text-white hover:bg-slate-900'
               }`}
             >
-              <SlidersHorizontal className="h-3.5 w-3.5 text-sky-400" />
-              <span>Compare</span>
+              Compare
             </Link>
             <Link
               href="/how-it-works"
@@ -168,62 +179,38 @@ export default function Navbar() {
           </nav>
         </div>
 
-        {/* Right Action Bar */}
-        <div className="flex items-center space-x-3">
-          {/* Network Badge */}
-          <div className="hidden lg:flex items-center space-x-2 rounded-full bg-slate-900 border border-slate-800 px-3 py-1 text-xs">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            <span className="text-slate-300 font-mono">BSC Testnet</span>
-            <span className="text-[10px] text-amber-400 bg-amber-400/10 px-1.5 py-0.2 rounded border border-amber-400/20">
-              97
-            </span>
+        <div className="flex items-center space-x-2 sm:space-x-3">
+          <div className="hidden sm:flex items-center space-x-1.5 rounded-full border border-slate-700 bg-slate-900/80 px-2.5 py-1 text-[11px]">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+            <span className="text-slate-300">BSC Testnet</span>
+            <span className="font-mono text-slate-500">97</span>
           </div>
 
-          {/* My Hires Link */}
           <Link
             href="/my-hires"
-            className={`relative flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium border transition-colors ${
-              pathname === '/my-hires'
-                ? 'bg-slate-800 text-white border-slate-700'
-                : 'bg-slate-900/60 text-slate-300 border-slate-800 hover:bg-slate-800 hover:text-white'
-            }`}
+            className="flex items-center space-x-1.5 rounded-xl border border-slate-700 bg-slate-900/60 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:border-slate-500 transition-colors"
           >
-            <Layers className="h-4 w-4 text-amber-400" />
-            <span>My Hires</span>
+            <Layers className="h-3.5 w-3.5 text-amber-400" />
+            <span className="hidden sm:inline">My Hires</span>
             {jobCount > 0 && (
-              <span className="ml-1 rounded-full bg-amber-500/20 text-amber-400 px-1.5 py-0.2 text-[10px] font-bold border border-amber-500/30">
+              <span className="flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-slate-950">
                 {jobCount}
               </span>
             )}
           </Link>
 
-          {/* Wallet Connect Button / Menu */}
           {walletAddress ? (
             <div className="relative">
               <button
-                onClick={() => setShowWalletMenu(!showWalletMenu)}
-                className="flex items-center space-x-2 rounded-xl bg-slate-900 border border-slate-700/80 px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-200 hover:border-slate-600 transition-colors"
+                onClick={() => setShowWalletMenu((v) => !v)}
+                className="flex items-center space-x-2 rounded-xl border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:border-amber-500/40 transition-colors"
               >
-                <div className="h-2 w-2 rounded-full bg-emerald-400"></div>
+                <span className="h-2 w-2 rounded-full bg-emerald-400" />
                 <span className="font-mono">{truncateAddress(walletAddress)}</span>
                 <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
               </button>
-
               {showWalletMenu && (
-                <div className="absolute right-0 mt-2 w-64 rounded-xl border border-slate-800 bg-slate-900/95 p-3 shadow-2xl backdrop-blur-lg z-50">
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
-                    <span className="text-xs text-slate-400">Connected Account</span>
-                    <span className="text-[10px] text-sky-400 bg-sky-500/10 px-1.5 py-0.5 rounded border border-sky-500/20">
-                      Altana Session
-                    </span>
-                  </div>
-                  <p className="font-mono text-xs text-white break-all mb-3">
-                    {walletAddress}
-                  </p>
-
+                <div className="absolute right-0 mt-2 w-56 rounded-xl border border-slate-700 bg-slate-950 p-2 shadow-xl z-50">
                   <div className="space-y-1">
                     <Link
                       href="/my-hires"
@@ -247,7 +234,7 @@ export default function Navbar() {
                       disabled={isRevoking}
                       className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-xs text-rose-400 hover:bg-rose-500/10 transition-colors"
                     >
-                      <span>{isRevoking ? 'Revoking...' : 'Revoke Session Key'}</span>
+                      <span>{isRevoking ? 'Revoking...' : 'Revoke Session'}</span>
                       <RotateCcw className="h-3.5 w-3.5" />
                     </button>
                     <button
@@ -262,13 +249,21 @@ export default function Navbar() {
               )}
             </div>
           ) : (
-            <button
-              onClick={connectWallet}
-              className="flex items-center space-x-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-1.5 text-xs sm:text-sm font-semibold text-slate-950 shadow-md shadow-amber-500/10 hover:from-amber-400 hover:to-amber-500 transition-all active:scale-95"
-            >
-              <Wallet className="h-4 w-4" />
-              <span>Connect Wallet</span>
-            </button>
+            <div className="flex flex-col items-end">
+              <button
+                onClick={handleConnect}
+                disabled={isConnecting}
+                className="flex items-center space-x-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-1.5 text-xs sm:text-sm font-semibold text-slate-950 shadow-md shadow-amber-500/10 hover:from-amber-400 hover:to-amber-500 transition-all active:scale-95 disabled:opacity-60"
+              >
+                <Wallet className="h-4 w-4" />
+                <span>{isConnecting ? 'Connecting…' : 'Connect Wallet'}</span>
+              </button>
+              {connectError && (
+                <p className="mt-1 max-w-[14rem] text-right text-[10px] text-rose-400">
+                  {connectError}
+                </p>
+              )}
+            </div>
           )}
         </div>
       </div>
