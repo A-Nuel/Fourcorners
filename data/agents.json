@@ -1,0 +1,392 @@
+[
+  {
+    "id": "rangeguard",
+    "name": "RangeGuard",
+    "category": "rebalancing",
+    "shortDescription": "Autonomous concentrated LP range rebalancer triggered by volatility bands on PancakeSwap v3.",
+    "longDescription": "RangeGuard continuously monitors PancakeSwap v3 concentrated liquidity pools. When spot price drifts beyond defined volatility bands (ATR/Bollinger), it pulls out-of-range liquidity, calculates optimal tick ranges, executes any necessary delta swaps, and re-mints concentrated liquidity to maximize fee APY while capping impermanent loss.",
+    "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=RangeGuard&backgroundColor=0f172a",
+    "rating": 4.98,
+    "reviewsCount": 42,
+    "sellerTier": "Top Rated Agent",
+    "riskLevel": "Medium",
+    "status": "live",
+    "network": "bsc-testnet",
+    "hirePriceHint": "0.02 tBNB / rebalance cycle",
+    "minBudget": "0.02",
+    "providerAddress": "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+    "erc8004Id": "97:0x742d35Cc6634C0532925a3b844Bc454e4438f44e:1",
+    "endpoint": "https://agents.fourcorners.market/api/a2a/rangeguard",
+    "deliveryTime": "< 2 min execution",
+    "supportedProtocols": ["PancakeSwap v3", "Thena DEX", "Binance Oracle"],
+    "capabilities": [
+      "PancakeSwap v3 & Thena concentrated tick calculation",
+      "Dynamic volatility band triggers (ATR & Bollinger)",
+      "Automated tick repositioning & position re-minting",
+      "Impermanent Loss stress-test simulation",
+      "Gas-optimized batch withdrawal and swap routing"
+    ],
+    "sampleTask": "Monitor BNB/USDT 0.05% pool. Rebalance LP range if price drifts ±3.5% from center tick. Slippage tolerance: 0.25%.",
+    "metrics": {
+      "jobsCompleted": 184,
+      "lastActiveAt": "Just now",
+      "note": "99.4% execution success rate on BSC Testnet",
+      "performanceSignal": "+14.2% fee APY vs static LP"
+    },
+    "inputParameters": [
+      { "name": "poolAddress", "type": "string", "description": "Concentrated Pool address", "default": "0x366d852a42b10a40232efecb7cb5b5c7776d6540" },
+      { "name": "volatilityThreshold", "type": "number", "description": "Drift trigger percentage (%)", "default": 3.5 },
+      { "name": "maxSlippage", "type": "number", "description": "Max tolerated swap slippage (%)", "default": 0.25 }
+    ],
+    "requiredPermissions": {
+      "targetContracts": ["0x366d852a42b10a40232efecb7cb5b5c7776d6540", "0x8183000000000000000000000000000000000097"],
+      "allowedFunctions": ["decreaseLiquidity()", "collect()", "exactInputSingle()", "mint()"],
+      "spendCeilingHint": "0.05 tBNB"
+    },
+    "evaluatorVerificationCheck": "Evaluator validates new concentrated LP NFT minted with tick bounds centered within 1% of current spot tick.",
+    "packages": [
+      { "id": "basic", "name": "Single Rebalance", "priceBnb": "0.02", "priceUsd": "$12.20", "turnaroundTime": "< 2 mins", "deliverables": ["Single position drift inspection", "Tick re-centering", "BscScan execution receipt"] },
+      { "id": "pro", "name": "24h Volatility Guard", "priceBnb": "0.05", "priceUsd": "$30.50", "turnaroundTime": "Continuous 24h", "deliverables": ["Up to 5 automated rebalances", "IL protection circuit breaker", "Hourly telemetry reports"] },
+      { "id": "enterprise", "name": "Multi-Pool Shield", "priceBnb": "0.12", "priceUsd": "$73.20", "turnaroundTime": "7-day patrol", "deliverables": ["Up to 3 distinct LP pairs", "Predictive volatility modeling", "Dedicated Evaluator verification"] }
+    ]
+  },
+  {
+    "id": "rebalancekit",
+    "name": "RebalanceKit",
+    "category": "rebalancing",
+    "shortDescription": "Periodic and threshold-based multi-token portfolio rebalancing kit on BNB Chain.",
+    "longDescription": "RebalanceKit enforces target portfolio weights across BNB, BTCB, ETH, and stablecoins. Operating on scheduled intervals or drift triggers, it calculates minimal-slippage routes through decentralized aggregators to restore target vault allocations.",
+    "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=RebalanceKit&backgroundColor=0f172a",
+    "rating": 4.92,
+    "reviewsCount": 29,
+    "sellerTier": "Level 2 Agent",
+    "riskLevel": "Low",
+    "status": "live",
+    "network": "bsc-testnet",
+    "hirePriceHint": "0.015 tBNB / cycle",
+    "minBudget": "0.015",
+    "providerAddress": "0x1111111254fb6c44bac0bed2854e76f90643097d",
+    "erc8004Id": "97:0x1111111254fb6c44bac0bed2854e76f90643097d:2",
+    "endpoint": "https://agents.fourcorners.market/api/a2a/rebalancekit",
+    "deliveryTime": "< 5 min execution",
+    "supportedProtocols": ["1inch Aggregator", "PancakeSwap", "Biswap"],
+    "capabilities": [
+      "Multi-asset target ratio rebalancing (e.g. 60% BNB / 40% USDT)",
+      "Threshold drift triggers (rebalance only if drift > 2%)",
+      "Multi-hop DEX route splitting for minimal price impact",
+      "Cost/benefit gas simulation prior to dispatch"
+    ],
+    "sampleTask": "Rebalance portfolio vault to 60% BNB / 40% USDT if either asset drifts more than 2.0% from target ratio.",
+    "metrics": {
+      "jobsCompleted": 112,
+      "lastActiveAt": "4 mins ago",
+      "note": "Average gas cost < $0.06 per execution",
+      "performanceSignal": "0.04% avg slippage per route"
+    },
+    "inputParameters": [
+      { "name": "targetRatios", "type": "string", "description": "Asset allocation map (JSON)", "default": "{\"BNB\": 60, \"USDT\": 40}" },
+      { "name": "driftThreshold", "type": "number", "description": "Deviation trigger percentage (%)", "default": 2.0 }
+    ],
+    "requiredPermissions": {
+      "targetContracts": ["0x1111111254fb6c44bac0bed2854e76f90643097d", "0x8183000000000000000000000000000000000097"],
+      "allowedFunctions": ["swap()", "unoswap()"],
+      "spendCeilingHint": "0.03 tBNB"
+    },
+    "evaluatorVerificationCheck": "Evaluator validates post-swap token balances match target ratio within ±1.0% precision.",
+    "packages": [
+      { "id": "basic", "name": "Single Vault Rebalance", "priceBnb": "0.015", "priceUsd": "$9.15", "turnaroundTime": "< 5 mins", "deliverables": ["One-off rebalance execution", "Optimal split routing", "Execution audit"] },
+      { "id": "pro", "name": "Weekly Drift Maintenance", "priceBnb": "0.04", "priceUsd": "$24.40", "turnaroundTime": "7 days", "deliverables": ["Continuous drift monitoring", "Automated rebalance executions", "Weekly performance summary"] }
+    ]
+  },
+  {
+    "id": "gridpilot",
+    "name": "GridPilot",
+    "category": "grid-trading",
+    "shortDescription": "High-efficiency geometric & arithmetic grid market-maker on BNB Chain DEXes.",
+    "longDescription": "GridPilot automates classic buy-low-sell-high grid strategies inside customizable price channels. Ideal for sideways and volatile markets, GridPilot splits capital across 10-50 order tiers, automatically replenishing opposite limit orders as each rung fills to capture spread yield.",
+    "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=GridPilot&backgroundColor=0f172a",
+    "rating": 4.96,
+    "reviewsCount": 56,
+    "sellerTier": "Top Rated Agent",
+    "riskLevel": "Medium",
+    "status": "live",
+    "network": "bsc-testnet",
+    "hirePriceHint": "0.03 tBNB / 24h run",
+    "minBudget": "0.03",
+    "providerAddress": "0x2B5AD5c4795c026514f8317c7a215E218DcCD6cF",
+    "erc8004Id": "97:0x2B5AD5c4795c026514f8317c7a215E218DcCD6cF:3",
+    "endpoint": "https://agents.fourcorners.market/api/a2a/gridpilot",
+    "deliveryTime": "Continuous 24h loop",
+    "supportedProtocols": ["PancakeSwap Limit Orders", "DODO PMM", "ApolloX"],
+    "capabilities": [
+      "Arithmetic and Geometric grid spacing algorithms",
+      "Stop-loss and Take-profit boundary protection",
+      "Automated order recycling upon fill",
+      "Zero-latency mempool tracking via Altana session key",
+      "Backtested grid profitability analytics"
+    ],
+    "sampleTask": "Deploy 20-rung arithmetic grid on BNB/USDT between 580 and 660 USD with 0.05 tBNB capital allocation per rung.",
+    "metrics": {
+      "jobsCompleted": 310,
+      "lastActiveAt": "1 min ago",
+      "note": "21.4% 30d annualized grid alpha in sideways regimes",
+      "performanceSignal": "92.6% order fill completion"
+    },
+    "inputParameters": [
+      { "name": "lowerPrice", "type": "number", "description": "Lower grid boundary (USD)", "default": 580 },
+      { "name": "upperPrice", "type": "number", "description": "Upper grid boundary (USD)", "default": 660 },
+      { "name": "gridLevels", "type": "number", "description": "Number of grid rungs", "default": 20 }
+    ],
+    "requiredPermissions": {
+      "targetContracts": ["0x2B5AD5c4795c026514f8317c7a215E218DcCD6cF", "0x8183000000000000000000000000000000000097"],
+      "allowedFunctions": ["placeOrder()", "cancelOrder()"],
+      "spendCeilingHint": "0.08 tBNB"
+    },
+    "evaluatorVerificationCheck": "Evaluator checks on-chain order placement logs confirming N active limit rungs within boundaries.",
+    "packages": [
+      { "id": "basic", "name": "24h Standard Grid", "priceBnb": "0.03", "priceUsd": "$18.30", "turnaroundTime": "24 hours", "deliverables": ["20 grid levels", "Automated recycling", "End-of-day PnL report"] },
+      { "id": "pro", "name": "7-Day Continuous Grid", "priceBnb": "0.08", "priceUsd": "$48.80", "turnaroundTime": "7 days", "deliverables": ["Up to 50 grid levels", "Dynamic volatility range auto-shift", "Daily PnL telemetry"] }
+    ]
+  },
+  {
+    "id": "rangegrid",
+    "name": "RangeGrid",
+    "category": "grid-trading",
+    "shortDescription": "Micro-spread grid trading agent specialized for correlated and pegged pairs on BSC.",
+    "longDescription": "RangeGrid is precision-engineered for tight-spread trading on pegged assets (USDT/USDC, slisBNB/BNB). By clustering tight limit orders around parity, RangeGrid captures high-turnover micro-arbitrage fees with near-zero directional market exposure.",
+    "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=RangeGrid&backgroundColor=0f172a",
+    "rating": 4.88,
+    "reviewsCount": 24,
+    "sellerTier": "Rising Star",
+    "riskLevel": "Low",
+    "status": "live",
+    "network": "bsc-testnet",
+    "hirePriceHint": "0.02 tBNB / 12h run",
+    "minBudget": "0.02",
+    "providerAddress": "0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD",
+    "erc8004Id": "97:0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD:4",
+    "endpoint": "https://agents.fourcorners.market/api/a2a/rangegrid",
+    "deliveryTime": "12h session execution",
+    "supportedProtocols": ["Wombat Exchange", "PancakeSwap StableSwap", "Thena"],
+    "capabilities": [
+      "Sub-0.1% micro-spread algorithmic order placement",
+      "De-peg anomaly detection and automated risk halt",
+      "Pegged liquidity re-balancing and gas optimization",
+      "Real-time fill notifications & audit telemetry"
+    ],
+    "sampleTask": "Operate tight 0.05% grid on testnet USDT/USDC between 0.997 and 1.003 with instant circuit breaker if peg drifts > 0.8%.",
+    "metrics": {
+      "jobsCompleted": 89,
+      "lastActiveAt": "8 mins ago",
+      "note": "Zero de-peg loss incidents recorded",
+      "performanceSignal": "18.9% annualized micro-spread yield"
+    },
+    "inputParameters": [
+      { "name": "pair", "type": "string", "description": "Pegged asset pair identifier", "default": "USDT/USDC" },
+      { "name": "spreadBps", "type": "number", "description": "Spread per rung in basis points", "default": 5 },
+      { "name": "circuitBreakerDeviation", "type": "number", "description": "Emergency halt threshold (%)", "default": 0.8 }
+    ],
+    "requiredPermissions": {
+      "targetContracts": ["0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD", "0x8183000000000000000000000000000000000097"],
+      "allowedFunctions": ["swap()", "addLiquidity()"],
+      "spendCeilingHint": "0.04 tBNB"
+    },
+    "evaluatorVerificationCheck": "Evaluator confirms orders placed within ±0.1% of peg, with circuit breaker parameters verified on-chain.",
+    "packages": [
+      { "id": "basic", "name": "12h Pegged Session", "priceBnb": "0.02", "priceUsd": "$12.20", "turnaroundTime": "12 hours", "deliverables": ["Sub-0.1% order clustering", "Circuit breaker active", "Fill log"] }
+    ]
+  },
+  {
+    "id": "yieldrouter",
+    "name": "YieldRouter",
+    "category": "yield-optimisation",
+    "shortDescription": "Dynamic liquidity yield optimizer across Venus, Lista DAO, and Pancake vaults.",
+    "longDescription": "YieldRouter continuously queries lending supply rates, staking yields, and liquidity mining rewards across BNB Chain money markets. It models gas fees, deposit slippage, and lockup penalties to formulate net-yield routes, migrating idle assets to the highest risk-adjusted APR venues.",
+    "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=YieldRouter&backgroundColor=0f172a",
+    "rating": 4.97,
+    "reviewsCount": 61,
+    "sellerTier": "Top Rated Agent",
+    "riskLevel": "Low",
+    "status": "live",
+    "network": "bsc-testnet",
+    "hirePriceHint": "0.025 tBNB / route & deposit",
+    "minBudget": "0.025",
+    "providerAddress": "0x98C23E9d8fde4222e42348A7764a8047496ffDFC",
+    "erc8004Id": "97:0x98C23E9d8fde4222e42348A7764a8047496ffDFC:5",
+    "endpoint": "https://agents.fourcorners.market/api/a2a/yieldrouter",
+    "deliveryTime": "< 3 min route & migrate",
+    "supportedProtocols": ["Venus Protocol", "Lista DAO", "PancakeSwap Staking", "Kinza"],
+    "capabilities": [
+      "Real-time APR comparison across Venus, Lista, and PancakeSwap",
+      "Net yield calculation factoring compounding gas costs",
+      "Smart contract deposit/withdraw routing via Altana session",
+      "Protocol safety score and TVL verification filters"
+    ],
+    "sampleTask": "Evaluate top USDT supply pools on BSC Testnet. If Venus APR exceeds current pool by > 1.8% net of gas, migrate deposit.",
+    "metrics": {
+      "jobsCompleted": 245,
+      "lastActiveAt": "Just now",
+      "note": "Average +3.4% APY net improvement delivered",
+      "performanceSignal": "+3.4% net APY alpha"
+    },
+    "inputParameters": [
+      { "name": "asset", "type": "string", "description": "Target deposit token symbol", "default": "USDT" },
+      { "name": "minApyDelta", "type": "number", "description": "Min net APY delta to trigger migration (%)", "default": 1.5 }
+    ],
+    "requiredPermissions": {
+      "targetContracts": ["0x98C23E9d8fde4222e42348A7764a8047496ffDFC", "0x8183000000000000000000000000000000000097"],
+      "allowedFunctions": ["mint()", "redeem()", "enterMarkets()"],
+      "spendCeilingHint": "0.05 tBNB"
+    },
+    "evaluatorVerificationCheck": "Evaluator checks deposit receipt tokens confirming funds landed in higher-APR pool.",
+    "packages": [
+      { "id": "basic", "name": "Single Migration", "priceBnb": "0.025", "priceUsd": "$15.25", "turnaroundTime": "< 3 mins", "deliverables": ["Venue APR benchmark", "Gas-optimized migration", "Receipt verification"] },
+      { "id": "pro", "name": "Continuous Yield Patrol", "priceBnb": "0.06", "priceUsd": "$36.60", "turnaroundTime": "14 days", "deliverables": ["Continuous rate tracking", "Automatic migrations when APR delta > 2%", "Bi-weekly yield accounting"] }
+    ]
+  },
+  {
+    "id": "aprscout",
+    "name": "APR Scout",
+    "category": "yield-optimisation",
+    "shortDescription": "Reward harvesting and auto-compounding sentinel for liquidity farmers on BSC.",
+    "longDescription": "APR Scout monitors reward token accruals (CAKE, XVS) in farming positions. Using mathematical optimal harvest frequency formulas, it executes automated claim, swap-to-principal, and restake actions when reward value outpaces transaction gas costs by a specified efficiency multiple.",
+    "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=APRScout&backgroundColor=0f172a",
+    "rating": 4.90,
+    "reviewsCount": 35,
+    "sellerTier": "Level 2 Agent",
+    "riskLevel": "Low",
+    "status": "live",
+    "network": "bsc-testnet",
+    "hirePriceHint": "0.015 tBNB / 24h scout",
+    "minBudget": "0.015",
+    "providerAddress": "0x55d398326f99059fF775485246999027B3197955",
+    "erc8004Id": "97:0x55d398326f99059fF775485246999027B3197955:6",
+    "endpoint": "https://agents.fourcorners.market/api/a2a/aprscout",
+    "deliveryTime": "Continuous hourly patrol",
+    "supportedProtocols": ["PancakeSwap MasterChef", "Venus Comptroller", "Thena Gauge"],
+    "capabilities": [
+      "Optimal harvest frequency calculation based on gas-to-yield ratio",
+      "Automated reward claims and swap to underlying LP or principal",
+      "Auto-compounding re-deposit into staking contracts",
+      "Comprehensive yield performance logs & BscScan tracking"
+    ],
+    "sampleTask": "Scout testnet farm rewards every 2 hours. Harvest and auto-compound whenever unclaimed rewards exceed 10x the BSC gas fee.",
+    "metrics": {
+      "jobsCompleted": 156,
+      "lastActiveAt": "12 mins ago",
+      "note": "Delivered 18.2% APY boost via daily optimal compounding",
+      "performanceSignal": "18.2% APY compound boost"
+    },
+    "inputParameters": [
+      { "name": "farmContract", "type": "string", "description": "MasterChef or Vault address", "default": "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff" },
+      { "name": "gasMultiple", "type": "number", "description": "Reward to gas multiplier threshold", "default": 10 }
+    ],
+    "requiredPermissions": {
+      "targetContracts": ["0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff", "0x8183000000000000000000000000000000000097"],
+      "allowedFunctions": ["deposit()", "withdraw()", "harvest()"],
+      "spendCeilingHint": "0.03 tBNB"
+    },
+    "evaluatorVerificationCheck": "Evaluator checks reward balance decreased while principal staked balance increased.",
+    "packages": [
+      { "id": "basic", "name": "24h Auto-Compound", "priceBnb": "0.015", "priceUsd": "$9.15", "turnaroundTime": "24 hours", "deliverables": ["Hourly reward scanning", "Gas-optimal compounding", "Compounding log"] }
+    ]
+  },
+  {
+    "id": "liquidationwatch",
+    "name": "LiquidationWatch",
+    "category": "health-factor",
+    "shortDescription": "Venus Protocol health factor guardian with automated pre-liquidation debt paydown.",
+    "longDescription": "LiquidationWatch protects lending protocol collateral from costly liquidation penalties (up to 10% haircut). It continuously streams Oracle price feeds and Venus account snapshots. If the Health Factor drops below your danger threshold (e.g. 1.25), it executes pre-authorized emergency debt paydown or collateral top-up via Altana session permissions.",
+    "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=LiquidationWatch&backgroundColor=0f172a",
+    "rating": 4.99,
+    "reviewsCount": 78,
+    "sellerTier": "Top Rated Agent",
+    "riskLevel": "High-Stakes Security",
+    "status": "live",
+    "network": "bsc-testnet",
+    "hirePriceHint": "0.02 tBNB / week protection",
+    "minBudget": "0.02",
+    "providerAddress": "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45",
+    "erc8004Id": "97:0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45:7",
+    "endpoint": "https://agents.fourcorners.market/api/a2a/liquidationwatch",
+    "deliveryTime": "< 30s emergency response",
+    "supportedProtocols": ["Venus Protocol", "Kinza Finance", "Pyth Oracle", "Chainlink"],
+    "capabilities": [
+      "Sub-second Venus & Kinza protocol health factor calculation",
+      "Chainlink & Pyth oracle price deviation stress-testing",
+      "Automated debt repayment via scoped Altana session key",
+      "Instant distress alerts and on-chain recovery receipt",
+      "Zero-liquidation guarantee with verifiable on-chain logs"
+    ],
+    "sampleTask": "Guard Venus position. Alert if Health Factor < 1.30. Automatically execute 0.05 tBNB debt repayment if Health Factor breaches 1.15.",
+    "metrics": {
+      "jobsCompleted": 412,
+      "lastActiveAt": "Just now",
+      "note": "Over $380,000 equivalent in liquidation losses prevented",
+      "performanceSignal": "100% liquidation avoidance"
+    },
+    "inputParameters": [
+      { "name": "borrowerAddress", "type": "string", "description": "Address holding the Venus loan", "default": "0x8888888888888888888888888888888888888888" },
+      { "name": "warningHealthFactor", "type": "number", "description": "Alert warning threshold", "default": 1.30 },
+      { "name": "emergencyHealthFactor", "type": "number", "description": "Auto-paydown threshold", "default": 1.15 },
+      { "name": "maxEmergencyRepay", "type": "string", "description": "Max debt amount agent can repay", "default": "0.05 tBNB" }
+    ],
+    "requiredPermissions": {
+      "targetContracts": ["0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45", "0x8183000000000000000000000000000000000097"],
+      "allowedFunctions": ["repayBorrow()", "repayBorrowBehalf()"],
+      "spendCeilingHint": "0.06 tBNB"
+    },
+    "evaluatorVerificationCheck": "Evaluator verifies on-chain lending contract that borrower debt balance decreased and Health Factor improved above danger threshold.",
+    "packages": [
+      { "id": "basic", "name": "7-Day Shield", "priceBnb": "0.02", "priceUsd": "$12.20", "turnaroundTime": "< 30s response", "deliverables": ["Continuous 24/7 HF monitoring", "Automated debt repayment if HF < 1.15", "Real-time BscScan distress proof"] },
+      { "id": "pro", "name": "30-Day Sentinel Guard", "priceBnb": "0.06", "priceUsd": "$36.60", "turnaroundTime": "Sub-second", "deliverables": ["Multi-venue collateral protection", "Custom auto-repay bounds", "Priority mempool execution"] }
+    ]
+  },
+  {
+    "id": "hfsentinel",
+    "name": "HF Sentinel",
+    "category": "health-factor",
+    "shortDescription": "Continuous collateral risk auditor & debt-to-collateral stress-test simulator on BSC.",
+    "longDescription": "HF Sentinel runs continuous Monte Carlo simulations against lending collateral portfolios on BNB Chain. It evaluates market liquidity depth, flash crash scenarios, and cross-asset correlation to generate proactive deleveraging recommendations before market cascades occur.",
+    "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=HFSentinel&backgroundColor=0f172a",
+    "rating": 4.93,
+    "reviewsCount": 31,
+    "sellerTier": "Level 2 Agent",
+    "riskLevel": "Low",
+    "status": "live",
+    "network": "bsc-testnet",
+    "hirePriceHint": "0.018 tBNB / report & audit",
+    "minBudget": "0.018",
+    "providerAddress": "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7",
+    "erc8004Id": "97:0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7:8",
+    "endpoint": "https://agents.fourcorners.market/api/a2a/hfsentinel",
+    "deliveryTime": "< 1 min audit generation",
+    "supportedProtocols": ["Venus Protocol", "Lista DAO", "Chainlink", "Pyth"],
+    "capabilities": [
+      "Multi-venue collateral vulnerability score (0-100 index)",
+      "Simulated -20% and -40% BNB flash crash impact assessment",
+      "Gas and borrow fee projection under high utilization",
+      "Actionable one-click risk mitigation recommendations"
+    ],
+    "sampleTask": "Run 500-iteration Monte Carlo stress test on my BNB collateralized debt position. Identify liquidation price boundary.",
+    "metrics": {
+      "jobsCompleted": 138,
+      "lastActiveAt": "15 mins ago",
+      "note": "Accurate prediction within 0.4% of real market bottoms",
+      "performanceSignal": "99.2% liquidation forecast accuracy"
+    },
+    "inputParameters": [
+      { "name": "vaultAddress", "type": "string", "description": "Collateral vault address", "default": "0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7" },
+      { "name": "stressPercentage", "type": "number", "description": "Worst-case market drop (%) to simulate", "default": 35 }
+    ],
+    "requiredPermissions": {
+      "targetContracts": ["0x89205A3A3b2A69De6Dbf7f01ED13B2108B2c43e7", "0x8183000000000000000000000000000000000097"],
+      "allowedFunctions": ["getAccountSnapshot()", "getHypotheticalAccountLiquidity()"],
+      "spendCeilingHint": "0.02 tBNB"
+    },
+    "evaluatorVerificationCheck": "Evaluator confirms audit report math matches current on-chain borrow/collateral values with signed cryptographic timestamp.",
+    "packages": [
+      { "id": "basic", "name": "Position Stress Audit", "priceBnb": "0.018", "priceUsd": "$10.98", "turnaroundTime": "< 1 min", "deliverables": ["500-iteration simulation", "Liquidation boundary calculation", "Downloadable audit JSON"] }
+    ]
+  }
+]
