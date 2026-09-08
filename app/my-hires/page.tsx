@@ -13,7 +13,8 @@ import {
   ArrowRight,
   RotateCcw,
   Sparkles,
-  Search
+  Search,
+  Wallet
 } from 'lucide-react';
 import { HireJob, AltanaSession } from '@/lib/types';
 import { getStoredJobs, getStoredSession, updateJob } from '@/lib/storage';
@@ -21,8 +22,10 @@ import { verifyAndSettleJob } from '@/lib/evaluator';
 import { formatBnb, formatUsd, truncateAddress, getBscScanTxUrl } from '@/lib/format';
 import SessionPanel from '@/components/SessionPanel';
 import ProofCard from '@/components/ProofCard';
+import { useWallet } from '@/context/WalletContext';
 
 export default function MyHiresPage() {
+  const { address, isConnected, openModal } = useWallet();
   const [jobs, setJobs] = useState<HireJob[]>([]);
   const [session, setSession] = useState<AltanaSession | null>(null);
   const [activeFilter, setActiveFilter] = useState<'all' | 'funded' | 'completed'>('all');
@@ -51,11 +54,21 @@ export default function MyHiresPage() {
   };
 
   const filteredJobs = jobs.filter((j) => {
+    if (address && j.clientAddress && j.clientAddress.toLowerCase() !== address.toLowerCase()) {
+      return false;
+    }
     if (activeFilter === 'all') return true;
     if (activeFilter === 'funded') return j.status === 'funded' || j.status === 'submitted';
     if (activeFilter === 'completed') return j.status === 'completed';
     return true;
   });
+
+  const handleClearHistory = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('fourcorners_hire_jobs_v2');
+      setJobs([]);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
@@ -72,13 +85,24 @@ export default function MyHiresPage() {
           </p>
         </div>
 
-        <Link
-          href="/"
-          className="flex items-center space-x-2 rounded-xl bg-amber-500 px-4 py-2.5 text-xs font-bold text-slate-950 shadow-md shadow-amber-500/10 hover:bg-amber-400 transition-all self-start sm:self-auto"
-        >
-          <Sparkles className="h-4 w-4" />
-          <span>Hire Another Agent</span>
-        </Link>
+        <div className="flex items-center space-x-3">
+          {!isConnected && (
+            <button
+              onClick={openModal}
+              className="flex items-center space-x-2 rounded-xl border border-slate-700 bg-slate-900 px-4 py-2.5 text-xs font-bold text-slate-200 hover:bg-slate-800 transition-all"
+            >
+              <Wallet className="h-4 w-4 text-amber-400" />
+              <span>Connect Wallet</span>
+            </button>
+          )}
+          <Link
+            href="/"
+            className="flex items-center space-x-2 rounded-xl bg-amber-500 px-4 py-2.5 text-xs font-bold text-slate-950 shadow-md shadow-amber-500/10 hover:bg-amber-400 transition-all"
+          >
+            <Sparkles className="h-4 w-4" />
+            <span>Hire Another Agent</span>
+          </Link>
+        </div>
       </div>
 
       {/* Altana Session Telemetry Card */}
@@ -87,11 +111,21 @@ export default function MyHiresPage() {
       {/* Jobs Section Header & Tabs */}
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center space-x-2">
-            <h2 className="text-lg font-bold text-white">Escrow Jobs History</h2>
-            <span className="rounded-full bg-slate-800 px-2.5 py-0.5 text-xs font-mono font-bold text-slate-300">
-              {jobs.length} Total
-            </span>
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
+              <h2 className="text-lg font-bold text-white">Escrow Jobs History</h2>
+              <span className="rounded-full bg-slate-800 px-2.5 py-0.5 text-xs font-mono font-bold text-slate-300">
+                {filteredJobs.length} Total
+              </span>
+            </div>
+            {jobs.length > 0 && (
+              <button
+                onClick={handleClearHistory}
+                className="text-[11px] text-slate-500 hover:text-slate-300 transition-colors underline"
+              >
+                Clear History
+              </button>
+            )}
           </div>
 
           <div className="flex items-center space-x-1 rounded-xl bg-slate-900 p-1 border border-slate-800 text-xs">
@@ -152,6 +186,11 @@ export default function MyHiresPage() {
                           <span className="rounded bg-slate-800 px-2 py-0.2 text-[10px] font-mono text-slate-400 uppercase">
                             {job.category}
                           </span>
+                          {job.isSimulated && (
+                            <span className="rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 px-1.5 py-0.2 text-[9px] font-mono font-semibold">
+                              SANDBOX
+                            </span>
+                          )}
                         </div>
                         <div className="flex items-center space-x-2 text-xs text-slate-500 font-mono mt-0.5">
                           <span>Job ID: {job.id}</span>
@@ -267,11 +306,22 @@ export default function MyHiresPage() {
           </div>
         ) : (
           <div className="rounded-3xl border border-slate-800 bg-slate-900/40 p-12 text-center space-y-4">
-            <Layers className="mx-auto h-12 w-12 text-slate-500" />
-            <h3 className="text-lg font-bold text-white">No jobs found in this tab</h3>
+            <Layers className="mx-auto h-12 w-12 text-slate-600" />
+            <h3 className="text-lg font-bold text-white">No active agent contracts found</h3>
             <p className="text-xs text-slate-400 max-w-sm mx-auto">
-              Hire an autonomous agent across Rebalancing, Grid Trading, Yield, or Health Factor to start an escrow job.
+              {!isConnected
+                ? 'Connect your Web3 wallet to inspect your active agent sessions, on-chain evaluation proofs, and escrow balances.'
+                : 'You have not hired any autonomous agents yet. Browse our specialized agents across Rebalancing, Grid Trading, Yield, and Health Factor.'}
             </p>
+            <div className="pt-2">
+              <Link
+                href="/"
+                className="inline-flex items-center space-x-2 rounded-xl bg-amber-500 px-5 py-2.5 text-xs font-bold text-slate-950 hover:bg-amber-400 transition-all"
+              >
+                <Sparkles className="h-4 w-4" />
+                <span>Browse Agent Marketplace</span>
+              </Link>
+            </div>
           </div>
         )}
       </div>

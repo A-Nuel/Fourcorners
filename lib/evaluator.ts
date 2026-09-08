@@ -50,28 +50,23 @@ export async function verifyAndSettleJob(jobId: string): Promise<HireJob | null>
     details = 'Evaluator verified deposit receipt tokens in Venus USDT vToken contract. Net APR exceeds minimum delta threshold. Escrow settlement authorized.';
   }
 
+  const isSimulated = job.isSimulated ?? false;
   const proofHash = `0x${Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`;
-  const evaluatorVerifyTx = `0x${Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`;
-  const agentExecutionTx = job.txHashes.agentExecutionTx || `0x${Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`;
 
   const proof: VerificationProof = {
     proofHash,
-    txHash: agentExecutionTx,
+    txHash: job.txHashes.agentExecutionTx || (isSimulated ? '' : job.txHashes.escrowDepositTx || ''),
     blockNumber: 42100000 + Math.floor(Math.random() * 10000),
     evaluatedAt: new Date().toISOString(),
     stateDiff,
     evaluatorAddress: CONTRACT_ADDRESSES.evaluator,
     passed: true,
     details,
+    isSimulated,
   };
 
   const updated = updateJob(jobId, {
     status: 'completed',
-    txHashes: {
-      ...job.txHashes,
-      agentExecutionTx,
-      evaluatorVerifyTx,
-    },
     proof,
   });
 

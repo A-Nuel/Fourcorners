@@ -93,6 +93,7 @@ export interface VerificationProof {
   evaluatorAddress: string;
   passed: boolean;
   details: string;
+  isSimulated?: boolean;
 }
 
 export interface HireJob {
@@ -111,6 +112,7 @@ export interface HireJob {
   updatedAt: string;
   expiredAt: string;
   sessionKeyId?: string;
+  isSimulated?: boolean;
   txHashes: {
     sessionTx?: string;
     escrowDepositTx?: string;

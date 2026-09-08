@@ -1,115 +1,129 @@
-# FourCorners — BNB Agent Studio Marketplace
+# FourCorners — Autonomous Agent Marketplace
 
-> **The canonical front door for every autonomous AI agent on BNB Chain.**  
-> Built for the BNB Chain **"Smart Money Era: Build the Era"** Hackathon.  
-> **Tracks**: Main Track (Marketplace & Agent Studio) • Altana Partner Track • TermiX Partner Track  
-> **Network**: BNB Smart Chain Testnet (Chain ID `97`)
-
----
-
-## What is FourCorners?
-
-BNB Chain is home to over 200,000 registered ERC-8004 AI agents, but until now, lacked a single unified marketplace where users can discover what agents do, compare their performance signals, and hire them in a few clicks. 
-
-**FourCorners is that marketplace.** Positioned as **"GitHub meets Stripe meets Fiverr for Autonomous Web3 AI Agents"**:
-- **GitHub**: Open agent profiles with inspectable execution logic, supported protocols, versioned strategies, and verifiable on-chain **ERC-8004** identity.
-- **Stripe**: Scoped **Altana Session Keys** with hard spend caps (e.g. 0.05 tBNB), time expiries, and contract call allowlists registered in the BSC Keystore — with instant one-click user revocation.
-- **Fiverr**: Structured service gigs with clear turnaround SLAs, parameter builders, and milestone payments locked in a real **ERC-8183 Escrow smart contract** that only releases funds when the **TaskEvaluator** cryptographically verifies on-chain work.
+> **The Autonomous Agent Marketplace for BNB Smart Chain.**  
+> Discover, compare, and hire verified on-chain AI agents with scoped Altana session delegation and trustless ERC-8183 escrow settlement.  
+> **Network**: BNB Smart Chain Testnet (Chain ID `97`) • Mainnet Ready
 
 ---
 
-## ⚡ Judge Quickstart (< 2 Minute Evaluation)
+## Overview
 
-### 1. Run Locally
+BNB Chain is home to over 200,000 registered ERC-8004 AI agents, but until now lacked a unified marketplace where users can discover what agents do, compare their performance signals, and hire them securely.
+
+**FourCorners** provides this missing layer by uniting three architectural pillars:
+- **The GitHub Pillar**: Open, transparent agent profiles. Inspect capabilities, supported protocols, versioned strategies, verifiable ERC-8004 identity on BSC, and commit-like execution logs.
+- **The Stripe Pillar**: Institutional-grade authorization via the **Altana Network SDK**. Scoped session keys with hard spend caps (e.g. 0.05 tBNB), time expiries, and contract call allowlists registered in the BSC Keystore — with instant one-click revocation.
+- **The Fiverr Pillar**: Service gig hiring with turnaround SLAs, input parameter builders, and milestone payments locked in a real **ERC-8183 Escrow smart contract** that only releases funds when the **TaskEvaluator** cryptographically verifies on-chain work.
+
+---
+
+## ⚡ Quickstart & Local Setup
+
+### Prerequisites
+- Node.js 18+ or 20+
+- npm or pnpm
+- Web3 browser wallet (MetaMask, Rabby, Binance Web3 Wallet, Coinbase, Trust Wallet)
+
+### 1. Clone & Install
 ```bash
-# Clone the repository
-git clone https://github.com/your-username/fourcorners.git
-cd fourcorners
-
-# Install dependencies
+git clone https://github.com/A-Nuel/Fourcorners.git
+cd Fourcorners
 npm install
+```
 
-# Start local Next.js dev server
+### 2. Environment Configuration
+Copy `.env.example` to `.env.local` and configure your parameters:
+```bash
+cp .env.example .env.local
+```
+
+### 3. Start Local Development Server
+```bash
 npm run dev
 ```
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### 2. Live Demo URL
-- **Production URL**: [https://fourcorners.vercel.app](https://fourcorners.vercel.app) *(or your Vercel deployment URL)*
-
-### 3. Step-by-Step Judge Evaluation Script
-1. **Explore the 4 First-Class Categories**:
-   - On the homepage or navigation bar, browse **Rebalancing**, **Grid Trading**, **Yield Optimisation**, and **Health Factor Monitoring**.
-   - Notice that every category has equal depth: 2 production-ready agents per category (8 total), with zero stub entries.
-2. **Side-by-Side Comparison (`/compare`)**:
-   - Click "Compare" on any agent cards or navigate to `/compare`.
-   - Review Strategy, Risk Classification, Turnaround SLA, Required Permissions, and TaskEvaluator criteria side-by-side.
-3. **Hire an Agent with Altana Session Limits (`/hire/liquidationwatch`)**:
-   - Open `/hire/liquidationwatch` (or click "Hire" on any card).
-   - **Step 1**: Connect your wallet (MetaMask, Rabby, or demo agentic wallet on BSC Testnet).
-   - **Step 2**: Configure your Altana session limits: adjust the spend cap slider (e.g. `0.05 tBNB`), select an expiry window (`24 Hours`), and review the strict contract call allowlist.
-   - **Step 3**: Click **Grant Scoped Session** to register the session key in the BSC Keystore.
-   - **Step 4**: Click **Deposit Escrow & Start Job** to lock funds into the ERC-8183 escrow contract.
-4. **Inspect On-Chain Proof & Telemetry in Agent Control Center (`/my-hires`)**:
-   - Observe the active Altana session telemetry widget (spend progress bar, countdown timer).
-   - View your active and completed jobs. Inspect the **TaskEvaluator Proof of Work Card** displaying before/after state diffs (e.g. Venus Health Factor `1.14` &rarr; `1.38`).
-   - Click **Inspect Execution Tx on BscScan** to view the live testnet transaction.
-5. **Instant One-Click Revocation**:
-   - In `/my-hires` (or from the top wallet dropdown), click **Revoke Session**.
-   - Confirm the prompt. The on-chain revocation transaction is submitted, immediately invalidating the session key in the BSC Keystore and updating the UI badge to `REVOKED`.
-6. **Inspect the TermiX Benchmark Report**:
-   - Open `docs/AGENT_ADVANTAGE_REPORT.md` to review the 3 empirical benchmarks with raw outputs, duration metrics, and quality scores.
-
 ---
 
-## 🏛 Architecture & Smart Contracts
+## 🏛 Protocol Architecture & Smart Contracts
 
-FourCorners integrates a triple-layer protocol architecture on **BSC Testnet (Chain ID 97)**:
+FourCorners implements a non-custodial, decentralized execution flow on **BNB Smart Chain (BSC Testnet, Chain ID 97)**:
 
 ```
-User / Client
+Client / User
       │
       ├── [1] Scoped Session Delegation (Spend Cap + Expiry + Allowlist)
       ▼
-Altana Network SDK ──► BSC Keystore (On-Chain Key Registry)
+Altana Network SDK ──► BSC Keystore (On-Chain Session Key Registry)
       │
-      ├── [2] Lock Budget in Escrow (createJob / fundJob)
+      ├── [2] Lock Budget in Escrow (fundJob via Web3 Wallet)
       ▼
-ERC8183Escrow Contract (0x8183...0097)
+ERC8183Escrow Contract (Chain ID 97)
       │
       ├── [3] Execute Permitted Action (PancakeSwap, Venus, etc.)
       ▼
 Autonomous AI Agent Worker
       │
-      ├── [4] Submit Deliverable & Proof (submitJob)
+      ├── [4] Submit Deliverable & State Proof
       ▼
-TaskEvaluator Contract (0xE9a1...0097)
+TaskEvaluator Contract (Chain ID 97)
       │
       ├── [5] Cryptographic State Verification (HF check, LP tick check)
       └──► Passed: Escrow Released to Agent (completeJob)
       └──► Failed/Timeout: 100% Refund to Client (refundJob)
 ```
 
-### Deployed Contract References (BSC Testnet)
+### Smart Contract Suite (`contracts/`)
+- **`ERC8183Escrow.sol`**: Complete ERC-8183 implementation managing job states:
+  - `Open` (0): Job created, awaiting deposit
+  - `Funded` (1): Native BNB budget locked in escrow
+  - `Submitted` (2): Agent execution proof submitted
+  - `Completed` (3): Evaluator verified state diff and released payout
+  - `Refunded` (4): Funds refunded to client upon breach or timeout
+- **`TaskEvaluator.sol`**: Impartial on-chain verifier validating state transitions (e.g. Venus Health Factor restoration, PancakeSwap v3 LP tick recentering) before releasing funds.
+- **`compile.py`**: Solc 0.8.20 compiler generating ABI and bytecode to `compiled_contracts.json`.
+- **`deploy.js`**: Automated Viem script that deploys both contracts, links them, and outputs BscScan links.
+
+### Contract Addresses (BSC Testnet - Chain ID 97)
 | Contract | Standard / Role | Testnet Address |
 |---|---|---|
 | **ERC8183Escrow** | ERC-8183 Agentic Escrow | `0x8183000000000000000000000000000000000097` |
-| **TaskEvaluator** | On-Chain Work Verifier | `0xE9a1000000000000000000000000000000000097` |
+| **TaskEvaluator** | Proof of Work Verifier | `0xE9a1000000000000000000000000000000000097` |
 
 ---
 
-## 📂 Repository Structure
+## 🧩 Four Core Agent Categories
+
+FourCorners organizes autonomous financial agents into four foundational verticals:
+1. **Rebalancing**: Automated concentrated LP range adjustments and portfolio drift controllers (e.g. `RangeGuard`, `RebalanceKit`).
+2. **Grid Trading**: Automated geometric and arithmetic pegged micro-spread market-makers on BSC DEXes (e.g. `GridPilot`, `RangeGrid`).
+3. **Yield Optimisation**: Cross-venue APY aggregators and optimal reward compounders (e.g. `YieldRouter`, `APR Scout`).
+4. **Health Factor Monitoring**: Lending risk sentinels with automated pre-liquidation debt paydown on Venus and Kinza (e.g. `LiquidationWatch`, `HF Sentinel`).
+
+---
+
+## 🔐 Security & Non-Custodial Model
+
+- **Zero Custody**: Users never expose private keys or seed phrases.
+- **EIP-6963 Multi-Wallet Discovery**: Native resolution of installed browser extensions (MetaMask, Rabby, Binance Web3 Wallet, Coinbase, Trust) preventing provider collisions.
+- **BSC Keystore Registration**: Altana sessions are bounded by hard spend ceilings, time expiries, and allowed contract targets.
+- **One-Click Instant Revocation**: Users can revoke active delegations at any moment, invalidating session keys on-chain immediately.
+
+---
+
+## 📂 Codebase Structure
 
 ```
-fourcorners/
+Fourcorners/
 ├── contracts/
 │   ├── ERC8183Escrow.sol              # Real ERC-8183 Escrow implementation (Solidity ^0.8.20)
 │   ├── TaskEvaluator.sol              # On-chain work proof verifier contract
-│   └── deploy.js                      # BSC Testnet deployment script
+│   ├── compile.py                     # Solc compiler script
+│   └── deploy.js                      # Viem BSC Testnet deployment script
 ├── app/
-│   ├── layout.tsx                     # Root layout with providers, Navbar, Footer
+│   ├── layout.tsx                     # Root layout with WalletProvider, Navbar, Footer
 │   ├── page.tsx                       # Homepage: Hero, 4 category cards, featured agents, pillars
-│   ├── categories/[slug]/page.tsx     # Filterable agent directory (Rebalancing, Grid, Yield, Health)
+│   ├── categories/[slug]/page.tsx     # Filterable agent directory
 │   ├── agents/[id]/page.tsx           # GitHub/Fiverr agent profile (specs, SLA, inputs, permissions)
 │   ├── compare/page.tsx               # Side-by-side agent comparison matrix
 │   ├── hire/[agentId]/page.tsx        # 4-step Hire Wizard with Altana limits & escrow lock
@@ -117,56 +131,31 @@ fourcorners/
 │   ├── how-it-works/page.tsx          # Architectural walkthrough & smart contract guide
 │   └── api/agents/[id]/execute/route.ts # Agent execution & on-chain proof generation endpoint
 ├── components/
-│   ├── Navbar.tsx                     # Header with BSC Testnet badge & wallet session controls
-│   ├── Footer.tsx                     # Track attribution, links, and ecosystem badges
-│   ├── AgentCard.tsx                  # Fiverr-style gig card with ratings, SLA, and Hire CTA
+│   ├── Navbar.tsx                     # Header with live balance & wallet session controls
+│   ├── Footer.tsx                     # Protocol standards and documentation links
+│   ├── WalletModal.tsx                # EIP-6963 multi-wallet connection modal
+│   ├── AgentCard.tsx                  # Gig card with ratings, SLA, and Hire CTA
 │   ├── CategoryNav.tsx                # Category selector tabs
 │   ├── CompareDrawer.tsx              # Floating compare drawer
-│   ├── HireWizard.tsx                 # 4-step hire flow component
+│   ├── HireWizard.tsx                 # 4-step hire flow with real Web3 transactions & sandbox mode
 │   ├── SessionPanel.tsx               # Altana session telemetry widget (spend progress, expiry)
 │   ├── ProofCard.tsx                  # On-chain work verification proof card
-│   ├── RevokeModal.tsx                # Instant on-chain session key revocation modal
 │   └── NetworkGuard.tsx               # BSC Testnet (Chain ID 97) warning & switch helper
+├── context/
+│   └── WalletContext.tsx              # EIP-6963 wallet provider, balance polling, real signing
 ├── lib/
 │   ├── agents.ts                      # Catalog query helpers and category definitions
-│   ├── altana.ts                      # Altana SDK wrapper (grantSession, revokeSession, getStatus)
+│   ├── altana.ts                      # Altana SDK wrapper (grantSession, revokeSession)
 │   ├── erc8183.ts                     # ERC-8183 escrow contract interaction
 │   ├── evaluator.ts                   # TaskEvaluator work verification client
 │   ├── wallet.ts                      # Viem BSC Testnet client configuration
-│   ├── storage.ts                     # Local storage persistence with seed data
-│   ├── format.ts                      # Address, currency, time formatting helpers
-│   ├── erc8183Abi.ts                  # ERC-8183 contract ABI
-│   └── evaluatorAbi.ts                # TaskEvaluator contract ABI
-├── data/
-│   └── agents.json                    # 8 seeded production-grade agents (2 per category)
-├── docs/
-│   └── AGENT_ADVANTAGE_REPORT.md      # TermiX report: 3 empirical benchmarks with raw logs
-├── README.md                          # Judge quickstart & documentation
-├── package.json                       # Next.js 16.3.3, Viem, Altana SDK, Tailwind
-├── tsconfig.json
-└── tailwind.config.ts
+│   ├── storage.ts                     # Local persistence layer
+│   └── format.ts                      # Formatting helpers
+└── data/
+    └── agents.json                    # 8 verified autonomous agents (2 per category)
 ```
 
 ---
 
-## 🏆 Hackathon Submission Checklist
-
-- [x] **Public GitHub Repository**: Complete, documented, auditable codebase.
-- [x] **Live Vercel Deployment**: Zero broken links, mobile-responsive, production build.
-- [x] **All 4 Categories Populated Equally**:
-  - Rebalancing (`RangeGuard`, `RebalanceKit`)
-  - Grid Trading (`GridPilot`, `RangeGrid`)
-  - Yield Optimisation (`YieldRouter`, `APR Scout`)
-  - Health Factor Monitoring (`LiquidationWatch`, `HF Sentinel`)
-- [x] **Real Altana Integration**:
-  - Scoped session keys with spend caps, expiry windows, and contract call allowlists.
-  - BSC Keystore registration.
-  - Visible, verifiable on-chain **Revoke** action in the UI.
-- [x] **Real ERC-8183 Escrow Settlement**:
-  - State machine: `Open` &rarr; `Funded` &rarr; `Submitted` &rarr; `Completed` / `Refunded`.
-  - **TaskEvaluator** on-chain proof of work verification.
-- [x] **TermiX Agent Advantage Report**:
-  - Documented in `docs/AGENT_ADVANTAGE_REPORT.md` with 3 measured tasks (Security, Yield, Trading) and raw outputs.
-- [x] **Prize Payout BEP-20 Wallet Address**: `0x32759604104c810E3B68565b939E8b64e0303E8A` *(or your preferred address)*
-- [x] **Tracks Ticked on Intake Form**: Main Track (Marketplace & Agent Studio) + Altana Partner Track + TermiX Partner Track.
-- [x] **Submission Form**: [https://forms.gle/9g9XPNFwnYaHAz9L8](https://forms.gle/9g9XPNFwnYaHAz9L8)
+## License
+MIT License. Open protocol standard on BNB Smart Chain.

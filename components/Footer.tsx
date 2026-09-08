@@ -55,23 +55,23 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Tracks & Pillars */}
+          {/* Standards & Pillars */}
           <div>
             <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-200 mb-3">
-              Hackathon Tracks
+              Protocol Standards
             </h4>
             <ul className="space-y-2 text-xs">
               <li className="flex items-center space-x-1.5 text-slate-300">
                 <span className="h-1.5 w-1.5 rounded-full bg-amber-400"></span>
-                <span>Main Track: Agent Studio</span>
+                <span>ERC-8004 Agent Registry</span>
               </li>
               <li className="flex items-center space-x-1.5 text-slate-300">
                 <span className="h-1.5 w-1.5 rounded-full bg-sky-400"></span>
-                <span>Altana: Scoped Session Keys</span>
+                <span>Altana Session Delegation</span>
               </li>
               <li className="flex items-center space-x-1.5 text-slate-300">
                 <span className="h-1.5 w-1.5 rounded-full bg-purple-400"></span>
-                <span>TermiX: Agent Advantage</span>
+                <span>TaskEvaluator Proof of Work</span>
               </li>
               <li className="pt-2">
                 <Link href="/how-it-works" className="text-amber-400 hover:underline flex items-center space-x-1">
@@ -132,7 +132,7 @@ export default function Footer() {
 
         {/* Bottom Bar */}
         <div className="border-t border-slate-800/80 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500">
-          <p>© 2026 FourCorners. Built for BNB Chain “Smart Money Era”.</p>
+          <p>© 2026 FourCorners. The Autonomous Agent Marketplace for BNB Smart Chain.</p>
           <div className="flex items-center space-x-4 mt-4 sm:mt-0 font-mono">
             <span className="text-slate-400">BSC Testnet (Chain ID 97)</span>
             <span>•</span>

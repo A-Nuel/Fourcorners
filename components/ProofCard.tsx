@@ -81,15 +81,21 @@ export default function ProofCard({ proof, jobId }: ProofCardProps) {
           <span>Proof Hash: {truncateAddress(proof.proofHash, 10, 6)}</span>
         </div>
 
-        <a
-          href={getBscScanTxUrl(proof.txHash)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center space-x-1 text-xs font-semibold text-amber-400 hover:text-amber-300 hover:underline"
-        >
-          <span>Inspect Execution Tx on BscScan</span>
-          <ExternalLink className="h-3 w-3" />
-        </a>
+        {proof.txHash && !proof.isSimulated ? (
+          <a
+            href={getBscScanTxUrl(proof.txHash)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center space-x-1 text-xs font-semibold text-amber-400 hover:text-amber-300 hover:underline"
+          >
+            <span>Inspect Execution Tx on BscScan</span>
+            <ExternalLink className="h-3 w-3" />
+          </a>
+        ) : (
+          <span className="text-xs text-amber-400 font-mono bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-lg">
+            Sandbox Verified (Deterministic Diff)
+          </span>
+        )}
       </div>
     </div>
   );

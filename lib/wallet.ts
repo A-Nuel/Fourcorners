@@ -1,4 +1,4 @@
-import { createPublicClient, http, defineChain } from 'viem';
+import { createPublicClient, createWalletClient, http, custom, defineChain, formatEther, parseEther } from 'viem';
 
 export const bscTestnet = defineChain({
   id: 97,
@@ -29,6 +29,63 @@ export const publicClient = createPublicClient({
   chain: bscTestnet,
   transport: http(),
 });
+
+export function getBrowserWalletClient() {
+  if (typeof window === 'undefined' || !(window as any).ethereum) {
+    return null;
+  }
+  return createWalletClient({
+    chain: bscTestnet,
+    transport: custom((window as any).ethereum),
+  });
+}
+
+export async function fetchBnbBalance(address: `0x${string}`): Promise<string> {
+  try {
+    const balanceWei = await publicClient.getBalance({ address });
+    const formatted = formatEther(balanceWei);
+    return parseFloat(formatted).toFixed(4);
+  } catch (e) {
+    console.warn('Failed to fetch BNB balance:', e);
+    return '0.0000';
+  }
+}
+
+export async function switchOrAddBscTestnet(): Promise<boolean> {
+  if (typeof window === 'undefined' || !(window as any).ethereum) {
+    return false;
+  }
+  try {
+    await (window as any).ethereum.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: '0x61' }], // 97 in hex
+    });
+    return true;
+  } catch (switchError: any) {
+    if (switchError.code === 4902 || switchError?.data?.originalError?.code === 4902) {
+      try {
+        await (window as any).ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [
+            {
+              chainId: '0x61',
+              chainName: 'BNB Smart Chain Testnet',
+              nativeCurrency: { name: 'tBNB', symbol: 'tBNB', decimals: 18 },
+              rpcUrls: ['https://data-seed-prebsc-1-s1.binance.org:8545/'],
+              blockExplorerUrls: ['https://testnet.bscscan.com'],
+            },
+          ],
+        });
+        return true;
+      } catch (addError) {
+        console.error('Failed to add BSC testnet to wallet', addError);
+        return false;
+      }
+    }
+    console.error('Failed to switch to BSC testnet', switchError);
+    return false;
+  }
+}
 
 export const CONTRACT_ADDRESSES = {
   escrow: (process.env.NEXT_PUBLIC_ERC8183_CONTRACT_ADDRESS ||

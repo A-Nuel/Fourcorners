@@ -10,6 +10,8 @@ export interface CreateHireParams {
   taskSpec: string;
   sessionKeyId?: string;
   durationHours?: number;
+  escrowDepositTx?: string;
+  isSimulated?: boolean;
 }
 
 /**
@@ -17,13 +19,19 @@ export interface CreateHireParams {
  * Locks the client's budget into the escrow contract until the Evaluator verifies work.
  */
 export async function hireErc8183Agent(params: CreateHireParams): Promise<HireJob> {
-  const { agent, clientAddress, budgetBnb, taskSpec, sessionKeyId, durationHours = 24 } = params;
+  const {
+    agent,
+    clientAddress,
+    budgetBnb,
+    taskSpec,
+    sessionKeyId,
+    durationHours = 24,
+    escrowDepositTx,
+    isSimulated = false,
+  } = params;
 
   const localJobId = `fc-job-${Date.now().toString().slice(-6)}`;
   const onChainJobId = Math.floor(Math.random() * 9000) + 1000;
-  
-  // Deterministic or real transaction hash for escrow deposit on BSC Testnet
-  const escrowDepositTx = `0x${Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`;
   
   const now = new Date();
   const expiredAt = new Date(now.getTime() + durationHours * 3600 * 1000);
@@ -44,8 +52,9 @@ export async function hireErc8183Agent(params: CreateHireParams): Promise<HireJo
     updatedAt: now.toISOString(),
     expiredAt: expiredAt.toISOString(),
     sessionKeyId,
+    isSimulated,
     txHashes: {
-      escrowDepositTx,
+      escrowDepositTx: escrowDepositTx || undefined,
     },
   };
 
@@ -56,12 +65,11 @@ export async function hireErc8183Agent(params: CreateHireParams): Promise<HireJo
 /**
  * Triggered by the agent when it completes the task and submits execution proof.
  */
-export async function submitAgentProof(jobId: string, resultUri: string): Promise<HireJob | null> {
-  const agentExecutionTx = `0x${Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`;
+export async function submitAgentProof(jobId: string, resultUri: string, txHash?: string): Promise<HireJob | null> {
   return updateJob(jobId, {
     status: 'submitted',
     txHashes: {
-      agentExecutionTx,
+      agentExecutionTx: txHash || undefined,
     },
   });
 }

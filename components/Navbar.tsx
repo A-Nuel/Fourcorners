@@ -13,69 +13,41 @@ import {
   ExternalLink,
   ChevronDown,
   LogOut,
-  RotateCcw
+  RotateCcw,
+  Copy,
+  Check
 } from 'lucide-react';
 import { truncateAddress } from '@/lib/format';
 import { getStoredJobs, getStoredSession, revokeStoredSession } from '@/lib/storage';
 import { revokeAltanaSession } from '@/lib/altana';
+import { useWallet } from '@/context/WalletContext';
 
 export default function Navbar() {
   const pathname = usePathname();
-  const [walletAddress, setWalletAddress] = useState<string>('');
-  const [isAltanaConnected, setIsAltanaConnected] = useState<boolean>(false);
+  const { address, isConnected, balance, openModal, disconnect, walletType } = useWallet();
   const [jobCount, setJobCount] = useState<number>(0);
   const [showWalletMenu, setShowWalletMenu] = useState<boolean>(false);
   const [isRevoking, setIsRevoking] = useState<boolean>(false);
+  const [copied, setCopied] = useState<boolean>(false);
 
   useEffect(() => {
-    // Initial read
-    const session = getStoredSession();
-    if (session && session.status === 'active') {
-      setWalletAddress(session.ownerAddress);
-      setIsAltanaConnected(true);
-    } else if (typeof window !== 'undefined' && (window as any).ethereum?.selectedAddress) {
-      setWalletAddress((window as any).ethereum.selectedAddress);
-    }
-
     const jobs = getStoredJobs();
     setJobCount(jobs.length);
 
     const handleStorageChange = () => {
       const updatedJobs = getStoredJobs();
       setJobCount(updatedJobs.length);
-      const s = getStoredSession();
-      if (s && s.status === 'active') {
-        setWalletAddress(s.ownerAddress);
-        setIsAltanaConnected(true);
-      }
     };
 
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  const connectWallet = async () => {
-    if (typeof window !== 'undefined' && (window as any).ethereum) {
-      try {
-        const accounts = await (window as any).ethereum.request({ method: 'eth_requestAccounts' });
-        if (accounts && accounts[0]) {
-          setWalletAddress(accounts[0]);
-          return;
-        }
-      } catch (e) {
-        console.warn('Injected wallet request rejected, using Altana session demo wallet', e);
-      }
-    }
-    // Default demonstration agentic wallet on BSC Testnet
-    const demoWallet = '0x32759604104c810E3B68565b939E8b64e0303E8A';
-    setWalletAddress(demoWallet);
-    setIsAltanaConnected(true);
-  };
-
-  const handleDisconnect = () => {
-    setWalletAddress('');
-    setIsAltanaConnected(false);
-    setShowWalletMenu(false);
+  const handleCopy = () => {
+    if (!address) return;
+    navigator.clipboard.writeText(address);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleQuickRevoke = async () => {
@@ -85,7 +57,6 @@ export default function Navbar() {
       if (session) {
         const res = await revokeAltanaSession(session.sessionKeyId);
         revokeStoredSession(res.txHash);
-        setIsAltanaConnected(false);
         setShowWalletMenu(false);
       }
     } finally {
@@ -94,7 +65,7 @@ export default function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-md">
+    <header className="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
         {/* Brand */}
         <div className="flex items-center space-x-6">
@@ -200,62 +171,80 @@ export default function Navbar() {
             )}
           </Link>
 
-          {/* Wallet Connect Button / Menu */}
-          {walletAddress ? (
+          {/* Real Wallet Connect Button / Menu */}
+          {isConnected && address ? (
             <div className="relative">
               <button
                 onClick={() => setShowWalletMenu(!showWalletMenu)}
                 className="flex items-center space-x-2 rounded-xl bg-slate-900 border border-slate-700/80 px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-200 hover:border-slate-600 transition-colors"
               >
                 <div className="h-2 w-2 rounded-full bg-emerald-400"></div>
-                <span className="font-mono">{truncateAddress(walletAddress)}</span>
+                <span className="font-mono text-amber-400 font-bold hidden sm:inline">{balance} tBNB</span>
+                <span className="font-mono">{truncateAddress(address)}</span>
                 <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
               </button>
 
               {showWalletMenu && (
-                <div className="absolute right-0 mt-2 w-64 rounded-xl border border-slate-800 bg-slate-900/95 p-3 shadow-2xl backdrop-blur-lg z-50">
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
-                    <span className="text-xs text-slate-400">Connected Account</span>
-                    <span className="text-[10px] text-sky-400 bg-sky-500/10 px-1.5 py-0.5 rounded border border-sky-500/20">
-                      Altana Session
+                <div className="absolute right-0 mt-2 w-72 rounded-2xl border border-slate-800 bg-slate-900/95 p-4 shadow-2xl backdrop-blur-xl z-50 space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <span className="text-xs text-slate-400">Connected Wallet</span>
+                    <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 uppercase font-mono">
+                      {walletType || 'Web3'}
                     </span>
                   </div>
-                  <p className="font-mono text-xs text-white break-all mb-3">
-                    {walletAddress}
-                  </p>
 
-                  <div className="space-y-1">
+                  <div className="rounded-xl bg-slate-950 p-3 border border-slate-800 space-y-1">
+                    <div className="flex items-center justify-between text-[11px] text-slate-500">
+                      <span>Address</span>
+                      <button
+                        onClick={handleCopy}
+                        className="text-slate-400 hover:text-white flex items-center space-x-1"
+                      >
+                        {copied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+                        <span>{copied ? 'Copied' : 'Copy'}</span>
+                      </button>
+                    </div>
+                    <p className="font-mono text-xs text-white break-all">{address}</p>
+                    <div className="text-[11px] text-amber-400 font-mono pt-1">
+                      Balance: <span className="font-bold">{balance} tBNB</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1 pt-1">
                     <Link
                       href="/my-hires"
                       onClick={() => setShowWalletMenu(false)}
-                      className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-xs text-slate-300 hover:bg-slate-800 hover:text-white"
+                      className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
                     >
                       <span>Session Telemetry</span>
-                      <ShieldCheck className="h-3.5 w-3.5 text-amber-400" />
+                      <ShieldCheck className="h-4 w-4 text-amber-400" />
                     </Link>
                     <a
-                      href={`https://testnet.bscscan.com/address/${walletAddress}`}
+                      href={`https://testnet.bscscan.com/address/${address}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-xs text-slate-300 hover:bg-slate-800 hover:text-white"
+                      className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
                     >
                       <span>View on BscScan</span>
-                      <ExternalLink className="h-3.5 w-3.5 text-slate-400" />
+                      <ExternalLink className="h-4 w-4 text-slate-400" />
                     </a>
                     <button
                       onClick={handleQuickRevoke}
                       disabled={isRevoking}
-                      className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-xs text-rose-400 hover:bg-rose-500/10 transition-colors"
+                      className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-xs text-rose-400 hover:bg-rose-500/10 transition-colors"
                     >
                       <span>{isRevoking ? 'Revoking...' : 'Revoke Session Key'}</span>
-                      <RotateCcw className="h-3.5 w-3.5" />
+                      <RotateCcw className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={handleDisconnect}
-                      className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-xs text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                      onClick={() => {
+                        disconnect();
+                        setShowWalletMenu(false);
+                      }}
+                      className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-xs text-slate-400 hover:bg-slate-800 hover:text-slate-200 transition-colors"
                     >
                       <span>Disconnect</span>
-                      <LogOut className="h-3.5 w-3.5" />
+                      <LogOut className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
@@ -263,8 +252,8 @@ export default function Navbar() {
             </div>
           ) : (
             <button
-              onClick={connectWallet}
-              className="flex items-center space-x-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-1.5 text-xs sm:text-sm font-semibold text-slate-950 shadow-md shadow-amber-500/10 hover:from-amber-400 hover:to-amber-500 transition-all active:scale-95"
+              onClick={openModal}
+              className="flex items-center space-x-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2 text-xs sm:text-sm font-bold text-slate-950 shadow-md shadow-amber-500/10 hover:from-amber-400 hover:to-amber-500 transition-all active:scale-95"
             >
               <Wallet className="h-4 w-4" />
               <span>Connect Wallet</span>

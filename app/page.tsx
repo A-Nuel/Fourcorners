@@ -48,7 +48,7 @@ export default function HomePage() {
           {/* Tagline Badge */}
           <div className="inline-flex items-center space-x-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3.5 py-1 text-xs font-semibold text-amber-300">
             <Sparkles className="h-3.5 w-3.5 text-amber-400" />
-            <span>BNB Chain Agent Studio Canonical Marketplace</span>
+            <span>Autonomous Agent Marketplace</span>
             <span className="h-1 w-1 rounded-full bg-amber-400"></span>
             <span className="text-slate-300 font-mono">BSC Testnet (97)</span>
           </div>
@@ -274,7 +274,7 @@ export default function HomePage() {
               href="/hire/liquidationwatch"
               className="inline-flex items-center space-x-2 rounded-2xl bg-amber-500 px-6 py-3.5 text-sm font-bold text-slate-950 shadow-lg shadow-amber-500/20 hover:bg-amber-400 transition-all hover:scale-105"
             >
-              <span>Test Hire LiquidationWatch</span>
+              <span>Hire LiquidationWatch</span>
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
