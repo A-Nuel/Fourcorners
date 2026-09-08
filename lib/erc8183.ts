@@ -36,6 +36,13 @@ export async function hireErc8183Agent(params: CreateHireParams): Promise<HireJo
     throw new HireError('Task specification is required.');
   }
 
+  // Env says contracts are live, but write path is not implemented yet.
+  if (isContractsDeployed()) {
+    throw new HireError(
+      'Contract addresses are configured, but on-chain escrow writes are not implemented yet. Unset NEXT_PUBLIC_ERC8183_CONTRACT_ADDRESS until the deposit flow is wired, or complete the write+receipt path first.'
+    );
+  }
+
   const localJobId = `fc-job-${Date.now().toString(36)}`;
   const now = new Date();
   const expiredAt = new Date(now.getTime() + durationHours * 3600 * 1000);
@@ -49,12 +56,13 @@ export async function hireErc8183Agent(params: CreateHireParams): Promise<HireJo
     providerAddress: agent.providerAddress,
     evaluatorAddress: CONTRACT_ADDRESSES.evaluator,
     budgetBnb,
-    status: isContractsDeployed() ? 'open' : 'funded',
+    status: 'intent',
     taskSpec,
     createdAt: now.toISOString(),
     updatedAt: now.toISOString(),
     expiredAt: expiredAt.toISOString(),
     sessionKeyId,
+    isSimulated: true,
     txHashes: {},
   };
 
@@ -71,8 +79,12 @@ export async function submitAgentProof(
   if (isContractsDeployed() && !executionTxHash) {
     throw new HireError('On-chain mode requires a real execution transaction hash.');
   }
+  if (executionTxHash && !/^0x[a-fA-F0-9]{64}$/.test(executionTxHash)) {
+    throw new HireError('Invalid execution transaction hash.');
+  }
   return updateJob(jobId, {
-    status: 'submitted',
+    status: executionTxHash ? 'submitted' : 'intent',
     txHashes: executionTxHash ? { agentExecutionTx: executionTxHash } : {},
+    isSimulated: !executionTxHash,
   });
 }

@@ -48,7 +48,7 @@ export async function grantAltanaSession(
     spentBnb: '0',
     expiryTimestamp,
     allowedContracts: targetContracts,
-    status: 'active',
+    status: 'intent',
     txHash: '',
     keystoreRegistered: false,
   };

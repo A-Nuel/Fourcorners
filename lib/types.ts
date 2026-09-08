@@ -1,4 +1,4 @@
-export type Category = 
+export type Category =
   | 'rebalancing'
   | 'grid-trading'
   | 'yield-optimisation'
@@ -73,7 +73,9 @@ export interface Agent {
   packages: GigPackage[];
 }
 
-export type JobStatus = 
+/** intent = local pre-deploy record; not escrowed on-chain */
+export type JobStatus =
+  | 'intent'
   | 'open'
   | 'funded'
   | 'submitted'
@@ -93,7 +95,9 @@ export interface VerificationProof {
   evaluatorAddress: string;
   passed: boolean;
   details: string;
+  /** true when not backed by a real chain receipt */
   isSimulated?: boolean;
+  onChain?: boolean;
 }
 
 export interface HireJob {
@@ -131,7 +135,7 @@ export interface AltanaSession {
   spentBnb: string;
   expiryTimestamp: number;
   allowedContracts: string[];
-  status: 'active' | 'revoked' | 'expired';
+  status: 'active' | 'revoked' | 'expired' | 'intent';
   txHash: string;
   keystoreRegistered: boolean;
 }

@@ -1,6 +1,5 @@
 /**
  * Simple in-memory rate limiter for Next.js API routes.
- * Suitable for single-instance demo/hackathon deploys.
  */
 
 type Bucket = { count: number; resetAt: number };
@@ -13,12 +12,20 @@ export interface RateLimitResult {
   resetAt: number;
 }
 
+function pruneExpired(now: number) {
+  for (const [key, bucket] of buckets) {
+    if (bucket.resetAt <= now) buckets.delete(key);
+  }
+}
+
 export function rateLimit(
   key: string,
   limit = 10,
   windowMs = 60_000
 ): RateLimitResult {
   const now = Date.now();
+  if (buckets.size > 500) pruneExpired(now);
+
   const existing = buckets.get(key);
 
   if (!existing || existing.resetAt <= now) {
@@ -45,5 +52,7 @@ export function clientKeyFromRequest(request: Request): string {
   if (forwarded) return forwarded.split(',')[0]?.trim() || 'unknown';
   const realIp = request.headers.get('x-real-ip');
   if (realIp) return realIp;
-  return 'unknown';
+  const ua = request.headers.get('user-agent') || 'no-ua';
+  const al = request.headers.get('accept-language') || 'no-al';
+  return `fp:${ua.slice(0, 40)}:${al.slice(0, 20)}`;
 }

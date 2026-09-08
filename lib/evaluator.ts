@@ -1,8 +1,11 @@
-import { HireJob, VerificationProof } from './types';
+import { HireJob } from './types';
 import { updateJob, getStoredJobs } from './storage';
-import { CONTRACT_ADDRESSES, isContractsDeployed } from './wallet';
+import { isContractsDeployed } from './wallet';
 
-/** TaskEvaluator client — does not invent on-chain proofs. */
+/**
+ * TaskEvaluator client.
+ * Does not invent on-chain proofs or mark jobs settled without a receipt.
+ */
 export async function verifyAndSettleJob(jobId: string): Promise<HireJob | null> {
   const jobs = getStoredJobs();
   const job = jobs.find((j) => j.id === jobId);
@@ -10,27 +13,15 @@ export async function verifyAndSettleJob(jobId: string): Promise<HireJob | null>
 
   if (isContractsDeployed()) {
     throw new Error(
-      'On-chain evaluator path enabled but not wired. Refusing to invent a settlement tx.'
+      'On-chain evaluator path is configured but not wired. Refusing to invent a settlement tx.'
     );
   }
 
-  const proof: VerificationProof = {
-    proofHash: '',
-    txHash: job.txHashes.agentExecutionTx || '',
-    evaluatedAt: new Date().toISOString(),
-    stateDiff: {
-      metric: 'Local intent check',
-      before: 'Job funded (intent)',
-      after: 'Marked complete locally — not settled on-chain',
-    },
-    evaluatorAddress: CONTRACT_ADDRESSES.evaluator,
-    passed: true,
-    details:
-      'Local verification only. Escrow contracts are not deployed on BSC Testnet yet. No on-chain settlement occurred.',
-  };
-
+  // Pre-deploy: do NOT attach a proof object and do NOT claim completed/settled.
+  // Keep status as intent so UI cannot show VERIFIED ON-CHAIN / FUNDED IN ESCROW.
   return updateJob(jobId, {
-    status: 'completed',
-    proof,
+    status: 'intent',
+    isSimulated: true,
+    proof: undefined,
   });
 }
