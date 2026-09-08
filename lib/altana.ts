@@ -1,5 +1,5 @@
 import { AltanaSession } from './types';
-import { CONTRACT_ADDRESSES } from './wallet';
+import { CONTRACT_ADDRESSES, isContractsDeployed } from './wallet';
 
 export interface GrantSessionParams {
   ownerAddress: string;
@@ -8,59 +8,64 @@ export interface GrantSessionParams {
   allowedContracts?: string[];
 }
 
+export class AltanaNotReadyError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'AltanaNotReadyError';
+  }
+}
+
 /**
- * Altana Session Delegation Manager.
- * Scopes session keys with strict limits: spend cap, expiry, and allowed contract call targets.
- * Automatically registers the key into the on-chain Keystore on BSC Testnet (Chain ID 97).
+ * Altana session grant — does NOT invent Keystore tx hashes.
+ * Intent-only until live Altana SDK path is enabled.
  */
-export async function grantAltanaSession(params: GrantSessionParams): Promise<AltanaSession> {
+export async function grantAltanaSession(
+  params: GrantSessionParams
+): Promise<AltanaSession> {
   const { ownerAddress, spendCapBnb, durationHours, allowedContracts } = params;
 
+  if (!ownerAddress || !/^0x[a-fA-F0-9]{40}$/.test(ownerAddress)) {
+    throw new AltanaNotReadyError('A connected wallet address is required to grant a session.');
+  }
+
   const expiryTimestamp = Math.floor(Date.now() / 1000) + durationHours * 3600;
-  const targetContracts = allowedContracts && allowedContracts.length > 0
-    ? allowedContracts
-    : [CONTRACT_ADDRESSES.escrow, CONTRACT_ADDRESSES.evaluator];
+  const targetContracts =
+    allowedContracts && allowedContracts.length > 0
+      ? allowedContracts
+      : [CONTRACT_ADDRESSES.escrow, CONTRACT_ADDRESSES.evaluator];
 
-  // Generate a deterministic session identifier and ephemeral public key
-  const randomHex = Array.from({ length: 8 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
-  const sessionKeyId = `altana-sess-97-0x${randomHex}`;
-  const publicKey = `0x04${Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`;
+  if (isContractsDeployed() && process.env.NEXT_PUBLIC_ALTANA_ENABLED === 'true') {
+    throw new AltanaNotReadyError(
+      'Altana live path flagged on but SDK wiring incomplete. Not fabricating a Keystore tx.'
+    );
+  }
 
-  // Keystore registration transaction on BSC Testnet
-  const txHash = `0x${Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`;
-
-  const session: AltanaSession = {
-    sessionKeyId,
-    publicKey,
+  return {
+    sessionKeyId: `intent-${ownerAddress.slice(2, 10)}-${expiryTimestamp}`,
+    publicKey: '',
     ownerAddress,
     spendCapBnb,
-    spentBnb: '0.000',
+    spentBnb: '0',
     expiryTimestamp,
     allowedContracts: targetContracts,
     status: 'active',
-    txHash,
-    keystoreRegistered: true,
-  };
-
-  return session;
-}
-
-/**
- * Revokes an active Altana session key on-chain.
- * Immediately invalidates the agent's delegation in the BSC Keystore.
- */
-export async function revokeAltanaSession(sessionKeyId: string): Promise<{ success: boolean; txHash: string }> {
-  // Simulates or sends the on-chain revocation transaction
-  const txHash = `0x${Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`;
-  return {
-    success: true,
-    txHash,
+    txHash: '',
+    keystoreRegistered: false,
   };
 }
 
-/**
- * Formats a session key into an explorer or keystore link
- */
-export function getKeystoreExplorerUrl(sessionKeyId: string): string {
-  return `https://testnet.bscscan.com/address/${CONTRACT_ADDRESSES.escrow}#readContract`;
+export async function revokeAltanaSession(
+  sessionKeyId: string
+): Promise<{ success: boolean; txHash: string; mode: 'onchain' | 'local' }> {
+  if (!sessionKeyId) {
+    return { success: false, txHash: '', mode: 'local' };
+  }
+  if (isContractsDeployed() && process.env.NEXT_PUBLIC_ALTANA_ENABLED === 'true') {
+    throw new AltanaNotReadyError('On-chain revoke not wired; refusing fake tx hash.');
+  }
+  return { success: true, txHash: '', mode: 'local' };
+}
+
+export function getKeystoreExplorerUrl(_sessionKeyId?: string): string {
+  return 'https://testnet.altana.network';
 }

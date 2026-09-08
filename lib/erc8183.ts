@@ -1,7 +1,6 @@
-import { HireJob } from './types';
-import { CONTRACT_ADDRESSES } from './wallet';
-import { saveJob, updateJob } from './storage';
-import { Agent } from './types';
+import { HireJob, Agent } from './types';
+import { CONTRACT_ADDRESSES, isContractsDeployed } from './wallet';
+import { saveJob } from './storage';
 
 export interface CreateHireParams {
   agent: Agent;
@@ -10,14 +9,16 @@ export interface CreateHireParams {
   taskSpec: string;
   sessionKeyId?: string;
   durationHours?: number;
-  escrowDepositTx?: string;
-  isSimulated?: boolean;
 }
 
-/**
- * Creates and funds an ERC-8183 escrow job on BSC Testnet.
- * Locks the client's budget into the escrow contract until the Evaluator verifies work.
- */
+export class HireError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'HireError';
+  }
+}
+
+/** Create hire job. Never invents deposit tx hashes. */
 export async function hireErc8183Agent(params: CreateHireParams): Promise<HireJob> {
   const {
     agent,
@@ -26,19 +27,21 @@ export async function hireErc8183Agent(params: CreateHireParams): Promise<HireJo
     taskSpec,
     sessionKeyId,
     durationHours = 24,
-    escrowDepositTx,
-    isSimulated = false,
   } = params;
 
-  const localJobId = `fc-job-${Date.now().toString().slice(-6)}`;
-  const onChainJobId = Math.floor(Math.random() * 9000) + 1000;
-  
+  if (!clientAddress || !/^0x[a-fA-F0-9]{40}$/.test(clientAddress)) {
+    throw new HireError('Connect a real wallet before hiring an agent.');
+  }
+  if (!taskSpec?.trim()) {
+    throw new HireError('Task specification is required.');
+  }
+
+  const localJobId = `fc-job-${Date.now().toString(36)}`;
   const now = new Date();
   const expiredAt = new Date(now.getTime() + durationHours * 3600 * 1000);
 
   const job: HireJob = {
     id: localJobId,
-    onChainJobId,
     agentId: agent.id,
     agentName: agent.name,
     category: agent.category,
@@ -46,30 +49,30 @@ export async function hireErc8183Agent(params: CreateHireParams): Promise<HireJo
     providerAddress: agent.providerAddress,
     evaluatorAddress: CONTRACT_ADDRESSES.evaluator,
     budgetBnb,
-    status: 'funded',
+    status: isContractsDeployed() ? 'open' : 'funded',
     taskSpec,
     createdAt: now.toISOString(),
     updatedAt: now.toISOString(),
     expiredAt: expiredAt.toISOString(),
     sessionKeyId,
-    isSimulated,
-    txHashes: {
-      escrowDepositTx: escrowDepositTx || undefined,
-    },
+    txHashes: {},
   };
 
   saveJob(job);
   return job;
 }
 
-/**
- * Triggered by the agent when it completes the task and submits execution proof.
- */
-export async function submitAgentProof(jobId: string, resultUri: string, txHash?: string): Promise<HireJob | null> {
+export async function submitAgentProof(
+  jobId: string,
+  _resultUri: string,
+  executionTxHash?: string
+): Promise<HireJob | null> {
+  const { updateJob } = await import('./storage');
+  if (isContractsDeployed() && !executionTxHash) {
+    throw new HireError('On-chain mode requires a real execution transaction hash.');
+  }
   return updateJob(jobId, {
     status: 'submitted',
-    txHashes: {
-      agentExecutionTx: txHash || undefined,
-    },
+    txHashes: executionTxHash ? { agentExecutionTx: executionTxHash } : {},
   });
 }

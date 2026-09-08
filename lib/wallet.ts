@@ -1,4 +1,4 @@
-import { createPublicClient, createWalletClient, http, custom, defineChain, formatEther, parseEther } from 'viem';
+import { createPublicClient, createWalletClient, http, custom, defineChain, formatEther } from 'viem';
 
 export const bscTestnet = defineChain({
   id: 97,
@@ -58,7 +58,7 @@ export async function switchOrAddBscTestnet(): Promise<boolean> {
   try {
     await (window as any).ethereum.request({
       method: 'wallet_switchEthereumChain',
-      params: [{ chainId: '0x61' }], // 97 in hex
+      params: [{ chainId: '0x61' }],
     });
     return true;
   } catch (switchError: any) {
@@ -87,9 +87,24 @@ export async function switchOrAddBscTestnet(): Promise<boolean> {
   }
 }
 
+const PLACEHOLDER_ESCROW = '0x8183000000000000000000000000000000000097' as const;
+const PLACEHOLDER_EVALUATOR = '0xE9a1000000000000000000000000000000000097' as const;
+
 export const CONTRACT_ADDRESSES = {
   escrow: (process.env.NEXT_PUBLIC_ERC8183_CONTRACT_ADDRESS ||
-    '0x8183000000000000000000000000000000000097') as `0x${string}`,
+    PLACEHOLDER_ESCROW) as `0x${string}`,
   evaluator: (process.env.NEXT_PUBLIC_EVALUATOR_CONTRACT_ADDRESS ||
-    '0xE9a1000000000000000000000000000000000097') as `0x${string}`,
+    PLACEHOLDER_EVALUATOR) as `0x${string}`,
 };
+
+/** True only when env points at real deployed addresses (not placeholders). */
+export function isContractsDeployed(): boolean {
+  const e = CONTRACT_ADDRESSES.escrow.toLowerCase();
+  const v = CONTRACT_ADDRESSES.evaluator.toLowerCase();
+  return (
+    e !== PLACEHOLDER_ESCROW.toLowerCase() &&
+    v !== PLACEHOLDER_EVALUATOR.toLowerCase() &&
+    !e.includes('000000000000000000000000') &&
+    !v.includes('000000000000000000000000')
+  );
+}
