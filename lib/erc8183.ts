@@ -1,7 +1,6 @@
-import { HireJob } from './types';
-import { CONTRACT_ADDRESSES } from './wallet';
-import { saveJob, updateJob } from './storage';
-import { Agent } from './types';
+import { HireJob, Agent } from './types';
+import { CONTRACT_ADDRESSES, isContractsDeployed } from './wallet';
+import { saveJob } from './storage';
 
 export interface CreateHireParams {
   agent: Agent;
@@ -12,25 +11,49 @@ export interface CreateHireParams {
   durationHours?: number;
 }
 
+export class HireError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'HireError';
+  }
+}
+
 /**
- * Creates and funds an ERC-8183 escrow job on BSC Testnet.
- * Locks the client's budget into the escrow contract until the Evaluator verifies work.
+ * Create a hire job. Real on-chain escrow only when contracts are deployed.
+ * Never invents deposit transaction hashes.
  */
 export async function hireErc8183Agent(params: CreateHireParams): Promise<HireJob> {
-  const { agent, clientAddress, budgetBnb, taskSpec, sessionKeyId, durationHours = 24 } = params;
+  const {
+    agent,
+    clientAddress,
+    budgetBnb,
+    taskSpec,
+    sessionKeyId,
+    durationHours = 24,
+  } = params;
 
-  const localJobId = `fc-job-${Date.now().toString().slice(-6)}`;
-  const onChainJobId = Math.floor(Math.random() * 9000) + 1000;
-  
-  // Deterministic or real transaction hash for escrow deposit on BSC Testnet
-  const escrowDepositTx = `0x${Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`;
-  
+  if (!clientAddress || !/^0x[a-fA-F0-9]{40}$/.test(clientAddress)) {
+    throw new HireError('Connect a real wallet before hiring an agent.');
+  }
+
+  if (!taskSpec?.trim()) {
+    throw new HireError('Task specification is required.');
+  }
+
+  const localJobId = `fc-job-${Date.now().toString(36)}`;
   const now = new Date();
   const expiredAt = new Date(now.getTime() + durationHours * 3600 * 1000);
 
+  // When contracts are live, this is the hook for real createJob + fund txs.
+  // Until then: intent record only — status funded means "budget committed in UI intent",
+  // not that native tBNB left the wallet.
+  if (isContractsDeployed()) {
+    // Placeholder for viem writeContract against ERC8183Escrow
+    // Must return real tx hash from the wallet receipt — never Math.random.
+  }
+
   const job: HireJob = {
     id: localJobId,
-    onChainJobId,
     agentId: agent.id,
     agentName: agent.name,
     category: agent.category,
@@ -38,15 +61,13 @@ export async function hireErc8183Agent(params: CreateHireParams): Promise<HireJo
     providerAddress: agent.providerAddress,
     evaluatorAddress: CONTRACT_ADDRESSES.evaluator,
     budgetBnb,
-    status: 'funded',
+    status: isContractsDeployed() ? 'open' : 'funded',
     taskSpec,
     createdAt: now.toISOString(),
     updatedAt: now.toISOString(),
     expiredAt: expiredAt.toISOString(),
     sessionKeyId,
-    txHashes: {
-      escrowDepositTx,
-    },
+    txHashes: {},
   };
 
   saveJob(job);
@@ -54,14 +75,23 @@ export async function hireErc8183Agent(params: CreateHireParams): Promise<HireJo
 }
 
 /**
- * Triggered by the agent when it completes the task and submits execution proof.
+ * Agent submits work proof. Requires a real execution tx when on-chain path is live.
  */
-export async function submitAgentProof(jobId: string, resultUri: string): Promise<HireJob | null> {
-  const agentExecutionTx = `0x${Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`;
+export async function submitAgentProof(
+  jobId: string,
+  resultUri: string,
+  executionTxHash?: string
+): Promise<HireJob | null> {
+  const { updateJob } = await import('./storage');
+
+  if (isContractsDeployed() && !executionTxHash) {
+    throw new HireError('On-chain mode requires a real agent execution transaction hash.');
+  }
+
   return updateJob(jobId, {
     status: 'submitted',
-    txHashes: {
-      agentExecutionTx,
-    },
+    txHashes: executionTxHash
+      ? { agentExecutionTx: executionTxHash }
+      : {},
   });
 }
