@@ -5,10 +5,11 @@ solcx.set_solc_version('0.8.20')
 base_dir = os.path.dirname(os.path.abspath(__file__))
 escrow_path = os.path.join(base_dir, 'ERC8183Escrow.sol')
 evaluator_path = os.path.join(base_dir, 'TaskEvaluator.sol')
+registry_path = os.path.join(base_dir, 'AgentRegistry.sol')
 
 print('Compiling contracts...')
 compiled = solcx.compile_files(
-    [escrow_path, evaluator_path],
+    [escrow_path, evaluator_path, registry_path],
     output_values=['abi', 'bin'],
     solc_version='0.8.20',
     optimize=True,

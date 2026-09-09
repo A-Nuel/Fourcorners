@@ -89,12 +89,16 @@ export async function switchOrAddBscTestnet(): Promise<boolean> {
 
 const PLACEHOLDER_ESCROW = '0x8183000000000000000000000000000000000097' as const;
 const PLACEHOLDER_EVALUATOR = '0xE9a1000000000000000000000000000000000097' as const;
+const PLACEHOLDER_REGISTRY = '0x8004000000000000000000000000000000000097' as const;
 
 export const CONTRACT_ADDRESSES = {
   escrow: (process.env.NEXT_PUBLIC_ERC8183_CONTRACT_ADDRESS ||
     PLACEHOLDER_ESCROW) as `0x${string}`,
   evaluator: (process.env.NEXT_PUBLIC_EVALUATOR_CONTRACT_ADDRESS ||
     PLACEHOLDER_EVALUATOR) as `0x${string}`,
+  registry: (process.env.NEXT_PUBLIC_AGENT_REGISTRY_ADDRESS ||
+    PLACEHOLDER_REGISTRY) as `0x${string}`,
+  wbnb: '0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd' as `0x${string}`,
 };
 
 /** True only when env points at real deployed addresses (not placeholders). */

@@ -7,7 +7,7 @@
  *   node contracts/deploy.js
  */
 
-const { createWalletClient, createPublicClient, http } = require('viem');
+const { createWalletClient, createPublicClient, http, parseEther } = require('viem');
 const { privateKeyToAccount } = require('viem/accounts');
 const { bscTestnet } = require('viem/chains');
 const fs = require('fs');
@@ -89,7 +89,7 @@ async function main() {
   console.log(`  ✓ ERC8183Escrow Deployed at:  ${escrowAddress}`);
 
   // 3. Link Evaluator with Escrow
-  console.log('\n[3/3] Linking TaskEvaluator to Escrow Contract...');
+  console.log('\n[3/4] Linking TaskEvaluator to Escrow Contract...');
   const linkTx = await walletClient.writeContract({
     address: evaluatorAddress,
     abi: compiled.TaskEvaluator.abi,
@@ -99,12 +99,52 @@ async function main() {
   await publicClient.waitForTransactionReceipt({ hash: linkTx });
   console.log(`  ✓ TaskEvaluator linked to Escrow! Tx: https://testnet.bscscan.com/tx/${linkTx}`);
 
+  // 4. Deploy AgentRegistry (ERC-8004) and register seeded agents
+  console.log('\n[4/4] Deploying AgentRegistry.sol & Seeding Agents...');
+  const registryDeployTx = await walletClient.deployContract({
+    abi: compiled.AgentRegistry.abi,
+    bytecode: compiled.AgentRegistry.bytecode,
+  });
+  console.log(`  Deploy Tx: https://testnet.bscscan.com/tx/${registryDeployTx}`);
+  const registryReceipt = await publicClient.waitForTransactionReceipt({ hash: registryDeployTx });
+  const registryAddress = registryReceipt.contractAddress;
+  console.log(`  ✓ AgentRegistry Deployed at: ${registryAddress}`);
+
+  // Register seeded agents on-chain
+  const agentsPath = path.join(__dirname, '..', 'data', 'agents.json');
+  if (fs.existsSync(agentsPath)) {
+    const agents = JSON.parse(fs.readFileSync(agentsPath, 'utf8'));
+    console.log(`\n  Registering ${agents.length} agents on-chain...`);
+    for (const agent of agents) {
+      try {
+        const regTx = await walletClient.writeContract({
+          address: registryAddress,
+          abi: compiled.AgentRegistry.abi,
+          functionName: 'registerAgent',
+          args: [
+            agent.id,
+            agent.name,
+            agent.category,
+            agent.providerAddress,
+            parseEther(agent.minBudget || '0.01'),
+            agent.endpoint || `https://agents.fourcorners.market/api/a2a/${agent.id}`,
+          ],
+        });
+        await publicClient.waitForTransactionReceipt({ hash: regTx });
+        console.log(`    ✓ Registered [${agent.name}] (${agent.id}) on-chain! Tx: https://testnet.bscscan.com/tx/${regTx}`);
+      } catch (err) {
+        console.warn(`    ⚠ Failed to register ${agent.id}:`, err.message || err);
+      }
+    }
+  }
+
   console.log('\n====================================================');
-  console.log('  Deployment Successful!');
+  console.log('  Deployment & Agent Seeding Successful!');
   console.log('====================================================');
   console.log(`NEXT_PUBLIC_ERC8183_CONTRACT_ADDRESS=${escrowAddress}`);
   console.log(`NEXT_PUBLIC_EVALUATOR_CONTRACT_ADDRESS=${evaluatorAddress}`);
-  console.log('\nAdd these lines to your .env.local file to use your newly deployed live contracts.');
+  console.log(`NEXT_PUBLIC_AGENT_REGISTRY_ADDRESS=${registryAddress}`);
+  console.log('\nAdd these lines to your .env.local file to activate live on-chain mode.');
 }
 
 if (require.main === module) {
