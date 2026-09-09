@@ -9,6 +9,8 @@ export interface CreateHireParams {
   taskSpec: string;
   sessionKeyId?: string;
   durationHours?: number;
+  escrowDepositTx?: string;
+  isSimulated?: boolean;
 }
 
 export class HireError extends Error {
@@ -27,6 +29,8 @@ export async function hireErc8183Agent(params: CreateHireParams): Promise<HireJo
     taskSpec,
     sessionKeyId,
     durationHours = 24,
+    escrowDepositTx,
+    isSimulated = false,
   } = params;
 
   if (!clientAddress || !/^0x[a-fA-F0-9]{40}$/.test(clientAddress)) {
@@ -47,6 +51,8 @@ export async function hireErc8183Agent(params: CreateHireParams): Promise<HireJo
   const now = new Date();
   const expiredAt = new Date(now.getTime() + durationHours * 3600 * 1000);
 
+  const hasRealDeposit = Boolean(escrowDepositTx && /^0x[a-fA-F0-9]{64}$/.test(escrowDepositTx));
+
   const job: HireJob = {
     id: localJobId,
     agentId: agent.id,
@@ -56,14 +62,14 @@ export async function hireErc8183Agent(params: CreateHireParams): Promise<HireJo
     providerAddress: agent.providerAddress,
     evaluatorAddress: CONTRACT_ADDRESSES.evaluator,
     budgetBnb,
-    status: 'intent',
+    status: hasRealDeposit ? 'funded' : 'intent',
     taskSpec,
     createdAt: now.toISOString(),
     updatedAt: now.toISOString(),
     expiredAt: expiredAt.toISOString(),
     sessionKeyId,
-    isSimulated: true,
-    txHashes: {},
+    isSimulated: isSimulated || !hasRealDeposit,
+    txHashes: hasRealDeposit && escrowDepositTx ? { escrowDepositTx } : {},
   };
 
   saveJob(job);
